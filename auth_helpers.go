@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	awsCredentials "github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -59,7 +59,7 @@ func GetAccountInfo(eimconn *iam.IAM, authProviderName string) (string, string, 
 
 	// Then try IAM ListRoles
 	log.Println("[DEBUG] Trying to get account ID via iam:ListRoles")
-	outRoles, err := eimconn.ListRoles(&aim.ListRolesInput{
+	outRoles, err := eimconn.ListRoles(&iam.ListRolesInput{
 		MaxItems: aws.Int64(int64(1)),
 	})
 	if err != nil {
@@ -84,15 +84,15 @@ func parseAccountInfoFromArn(arn string) (string, string, error) {
 // This function is responsible for reading credentials from the
 // environment in the case that they're not explicitly specified
 // in the Terraform configuration.
-func GetCredentials(c *Config) (*awsCredentials.Credentials, error) {
+func GetCredentials(c *Config) (*credentials.Credentials, error) {
 	// build a chain provider, lazy-evaulated by aws-sdk
-	providers := []awsCredentials.Provider{
-		&awsCredentials.StaticProvider{Value: awsCredentials.Value{
+	providers := []credentials.Provider{
+		&credentials.StaticProvider{Value: credentials.Value{
 			AccessKeyID:     c.AccessKey,
 			SecretAccessKey: c.SecretKey,
 		}},
-		&awsCredentials.EnvProvider{},
-		&awsCredentials.SharedCredentialsProvider{
+		&credentials.EnvProvider{},
+		&credentials.SharedCredentialsProvider{
 			Filename: c.CredsFilename,
 			Profile:  c.Profile,
 		},
@@ -108,7 +108,7 @@ func GetCredentials(c *Config) (*awsCredentials.Credentials, error) {
 	}
 	usedEndpoint := setOptionalEndpoint(cfg)
 
-	creds := awsCredentials.NewChainCredentials(providers)
+	creds := credentials.NewChainCredentials(providers)
 	cp, err := creds.Get()
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "NoCredentialProviders" {
@@ -129,36 +129,7 @@ func GetCredentials(c *Config) (*awsCredentials.Credentials, error) {
 		HTTPClient:  cleanhttp.DefaultClient(),
 	}
 
-	stsclient := sts.New(session.New(awsConfig))
-	assumeRoleProvider := &stscreds.AssumeRoleProvider{
-		Client:  stsclient,
-		RoleARN: c.AssumeRoleARN,
-	}
-	if c.AssumeRoleSessionName != "" {
-		assumeRoleProvider.RoleSessionName = c.AssumeRoleSessionName
-	}
-	if c.AssumeRoleExternalID != "" {
-		assumeRoleProvider.ExternalID = aws.String(c.AssumeRoleExternalID)
-	}
-
-	providers = []awsCredentials.Provider{assumeRoleProvider}
-
-	assumeRoleCreds := awsCredentials.NewChainCredentials(providers)
-	_, err = assumeRoleCreds.Get()
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "NoCredentialProviders" {
-			return nil, fmt.Errorf("The role %q cannot be assumed.\n\n"+
-				"  There are a number of possible causes of this - the most common are:\n"+
-				"    * The credentials used in order to assume the role are invalid\n"+
-				"    * The credentials do not have appropriate permission to assume the role\n"+
-				"    * The role ARN is not valid",
-				c.AssumeRoleARN)
-		}
-
-		return nil, fmt.Errorf("Error loading credentials for AWS Provider: %s", err)
-	}
-
-	return assumeRoleCreds, nil
+	return nil, nil
 }
 
 func setOptionalEndpoint(cfg *aws.Config) string {

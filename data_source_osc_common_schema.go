@@ -32,7 +32,7 @@ func dataSourceTags(m []*ec2.Tag) *schema.Set {
 	return s
 }
 
-func buildAwsDataSourceFilters(set *schema.Set) []*ec2.Filter {
+func buildOscDataSourceFilters(set *schema.Set) []*ec2.Filter {
 	var filters []*ec2.Filter
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
