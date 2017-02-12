@@ -183,7 +183,7 @@ func resourceAwsVpcRead(d *schema.ResourceData, meta interface{}) error {
 	// Classic Link is only available in regions that support EC2 Classic
 	respClassiclink, err := conn.DescribeVpcClassicLink(DescribeClassiclinkOpts)
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "UnsupportedOperation" {
+		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "InvalidAction" {
 			log.Printf("[WARN] VPC Classic Link is not supported in this region")
 		} else {
 			return err
