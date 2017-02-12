@@ -1,4 +1,4 @@
-package aws
+package osc
 
 // This list is copied from
 // http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_website_region_endpoints
