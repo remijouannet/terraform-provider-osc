@@ -1,4 +1,4 @@
-package aws
+package osc
 
 import (
 	"encoding/base64"
