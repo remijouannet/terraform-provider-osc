@@ -308,12 +308,6 @@ func init() {
 			"being executed. If the API request still fails, an error is\n" +
 			"thrown.",
 
-		"dynamodb_endpoint": "Use this to override the default endpoint URL constructed from the `region`.\n" +
-			"It's typically used to connect to dynamodb-local.",
-
-		"kinesis_endpoint": "Use this to override the default endpoint URL constructed from the `region`.\n" +
-			"It's typically used to connect to kinesalite.",
-
 		"iam_endpoint": "Use this to override the default endpoint URL constructed from the `region`.\n",
 
 		"ec2_endpoint": "Use this to override the default endpoint URL constructed from the `region`.\n",
@@ -394,11 +388,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	for _, endpointsSetI := range endpointsSet.List() {
 		endpoints := endpointsSetI.(map[string]interface{})
-		config.DynamoDBEndpoint = endpoints["dynamodb"].(string)
 		config.IamEndpoint = endpoints["iam"].(string)
 		config.Ec2Endpoint = endpoints["ec2"].(string)
 		config.ElbEndpoint = endpoints["elb"].(string)
-		config.KinesisEndpoint = endpoints["kinesis"].(string)
 		config.S3Endpoint = endpoints["s3"].(string)
 	}
 
@@ -468,12 +460,6 @@ func endpointsSchema() *schema.Schema {
 		Optional: true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"dynamodb": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Default:     "",
-					Description: descriptions["dynamodb_endpoint"],
-				},
 				"iam": {
 					Type:        schema.TypeString,
 					Optional:    true,
@@ -494,13 +480,7 @@ func endpointsSchema() *schema.Schema {
 					Default:     "",
 					Description: descriptions["elb_endpoint"],
 				},
-				"kinesis": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Default:     "",
-					Description: descriptions["kinesis_endpoint"],
-				},
-				"s3": {
+	            "s3": {
 					Type:        schema.TypeString,
 					Optional:    true,
 					Default:     "",
@@ -515,11 +495,9 @@ func endpointsSchema() *schema.Schema {
 func endpointsToHash(v interface{}) int {
 	var buf bytes.Buffer
 	m := v.(map[string]interface{})
-	buf.WriteString(fmt.Sprintf("%s-", m["dynamodb"].(string)))
 	buf.WriteString(fmt.Sprintf("%s-", m["iam"].(string)))
 	buf.WriteString(fmt.Sprintf("%s-", m["ec2"].(string)))
 	buf.WriteString(fmt.Sprintf("%s-", m["elb"].(string)))
-	buf.WriteString(fmt.Sprintf("%s-", m["kinesis"].(string)))
 	buf.WriteString(fmt.Sprintf("%s-", m["s3"].(string)))
 
 	return hashcode.String(buf.String())
