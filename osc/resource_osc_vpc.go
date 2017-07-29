@@ -170,7 +170,6 @@ func resourceAwsVpcRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("enable_dns_hostnames", *resp.EnableDnsHostnames.Value)
 
-
 	// Get the main routing table for this VPC
 	// Really Ugly need to make this better - rmenn
 	filter1 := &ec2.Filter{
@@ -250,7 +249,6 @@ func resourceAwsVpcUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		d.SetPartial("enable_dns_support")
 	}
-
 
 	if err := setTags(conn, d); err != nil {
 		return err

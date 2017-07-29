@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/remijouannet/terraform-provider-osc/osc"
 	"github.com/hashicorp/terraform/plugin"
+	"github.com/remijouannet/terraform-provider-osc/osc"
 )
 
 func main() {

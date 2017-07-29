@@ -57,7 +57,6 @@ func validateElastiCacheClusterId(v interface{}, k string) (ws []string, errors 
 	return
 }
 
-
 // validateTagFilters confirms the "value" component of a tag filter is one of
 // AWS's three allowed types.
 func validateTagFilters(v interface{}, k string) (ws []string, errors []error) {

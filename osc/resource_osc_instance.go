@@ -509,7 +509,7 @@ func resourceAwsInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("network_interface_id", "")
 	}
 	d.Set("ebs_optimized", instance.EbsOptimized)
-	if instance.SubnetId != nil && *instance.SubnetId != "" {
+	if instance.SubnetId != nil && *instance.SubnetId != "" && *instance.SourceDestCheck == true {
 		d.Set("source_dest_check", instance.SourceDestCheck)
 	}
 
