@@ -7,19 +7,19 @@ cd to the example you want to test
 
 * plan and apply
 
-'''
+```
 terraform plan && terraform apply
-'''
+```
 
 * visualize
 
-'''
+```
 terraform output
 terraform show
-'''
+```
 
 * destroy everything
 
-'''
+```
 terraform destroy
-'''
+```

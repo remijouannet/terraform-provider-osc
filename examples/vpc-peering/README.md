@@ -6,7 +6,7 @@ the output should show you the EIP of each adm and the private IP of each privat
 
 to quickly test that the peering connection is working you can do the following
 
-'''
+```
 ssh -J root@IP.ADM.VPC.1 root@IP.PRIVATE.VPC.2 #use adm-1 on vpc-1 to access an instance on vpc-2
 ssh -J root@IP.ADM.VPC.2 root@IP.PRIVATE.VPC.1 #use adm-2 on vpc-2 to access an instance on vpc-1
-'''
+```
