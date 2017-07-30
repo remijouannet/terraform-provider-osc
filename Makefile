@@ -1,5 +1,8 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+XC_ARCH="386 amd64 arm"
+XC_OS="linux darwin windows freebsd openbsd solaris"
+XC_EXCLUDE_OSARCH="!darwin/arm !darwin/386"
 
 default: build
 
@@ -13,6 +16,14 @@ test: fmtcheck
 
 testacc: fmtcheck
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+
+bin: fmt
+	mkdir -p ./bin
+	rm -f bin/*
+	echo "==> Building..."
+	CGO_ENABLED=0 gox -os=$(XC_OS) -arch=$(XC_ARCH) \
+				-osarch=$(XC_EXCLUDE_OSARCH) \
+				-output ./bin/terraform-provider-osc_{{.OS}}_{{.Arch}} .
 
 vet:
 	@echo "go vet ."
