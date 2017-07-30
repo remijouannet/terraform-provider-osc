@@ -288,16 +288,28 @@ func resourceAwsRouteTableUpdate(d *schema.ResourceData, meta interface{}) error
 			m := route.(map[string]interface{})
 
 			opts := ec2.CreateRouteInput{
-				RouteTableId:           aws.String(d.Id()),
-				DestinationCidrBlock:   aws.String(m["cidr_block"].(string)),
-				GatewayId:              aws.String(m["gateway_id"].(string)),
-				InstanceId:             aws.String(m["instance_id"].(string)),
-				VpcPeeringConnectionId: aws.String(m["vpc_peering_connection_id"].(string)),
-				NetworkInterfaceId:     aws.String(m["network_interface_id"].(string)),
+				RouteTableId:         aws.String(d.Id()),
+				DestinationCidrBlock: aws.String(m["cidr_block"].(string)),
 			}
 
 			if m["nat_gateway_id"].(string) != "" {
 				opts.NatGatewayId = aws.String(m["nat_gateway_id"].(string))
+			}
+
+			if m["network_interface_id"].(string) != "" {
+				opts.NetworkInterfaceId = aws.String(m["network_interface_id"].(string))
+			}
+
+			if m["instance_id"].(string) != "" {
+				opts.InstanceId = aws.String(m["InstanceId"].(string))
+			}
+
+			if m["gateway_id"].(string) != "" {
+				opts.GatewayId = aws.String(m["gateway_id"].(string))
+			}
+
+			if m["vpc_peering_connection_id"].(string) != "" {
+				opts.VpcPeeringConnectionId = aws.String(m["vpc_peering_connection_id"].(string))
 			}
 
 			log.Printf("[INFO] Creating route for %s: %#v", d.Id(), opts)
