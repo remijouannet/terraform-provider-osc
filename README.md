@@ -12,7 +12,7 @@ Building it
 
 Download the binary and put it in the same folder than terraform binary
 
-``sh
+```sh
 $ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.1/terraform-provider-osc -O $(dirname $(which terraform))/terraform-provider-osc
 $ chmod +x $(dirname $(which terraform))/terraform-provider-osc
 ```
@@ -23,14 +23,14 @@ Building it
 
 Clone repository to: `$GOPATH/src/github.com/remijouannet/terraform-provider-osc`
 
-``sh
+```sh
 $ mkdir -p $GOPATH/src/github.com/remijouannet; cd $GOPATH/src/github.com/remijouannet
 $ git clone git@github.com:remijouannet/terraform-provider-osc
 ```
 
 Enter the provider directory and build the provider
 
-``sh
+```sh
 $ cd $GOPATH/src/github.com/remijouannet/terraform-provider-osc
 $ make build
 ```
