@@ -13,7 +13,7 @@ Building it
 Download the binary and put it in the same folder than terraform binary
 
 ``sh
-$ wget binary -o $(dirname $(which terraform))/terraform-provider-osc
+$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.1/terraform-provider-osc -o $(dirname $(which terraform))/terraform-provider-osc
 $ 
 ```
 
