@@ -7,7 +7,7 @@ Requirements
 -   [Terraform](https://www.terraform.io/downloads.html) 0.9.11 
 -   [Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
 
-Building it
+Install
 ---------------------
 
 Download the binary and put it in the same folder than terraform binary
@@ -18,7 +18,7 @@ $ chmod +x $(dirname $(which terraform))/terraform-provider-osc
 ```
 
 
-Building it
+Build
 ---------------------
 
 Clone repository to: `$GOPATH/src/github.com/remijouannet/terraform-provider-osc`
