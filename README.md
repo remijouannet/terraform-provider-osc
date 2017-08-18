@@ -1,4 +1,4 @@
-Terraform Provider for Outscale
+Terraform Provider for Outscale (not official)
 ==================
 
 Requirements
