@@ -3,6 +3,8 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 XC_ARCH="386 amd64 arm"
 XC_OS="linux darwin windows freebsd openbsd solaris"
 XC_EXCLUDE_OSARCH="!darwin/arm !darwin/386"
+VERSION=$$(git describe --abbrev=0 --tags)
+PWD=$$(pwd)
 
 default: build
 
@@ -17,13 +19,13 @@ test: fmtcheck
 testacc: fmtcheck
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 
-bin: fmt
-	mkdir -p ./bin
-	rm -f bin/*
+pkg: fmt
+	mkdir -p ./pkg
+	rm -rf ./pkg/*
 	echo "==> Building..."
 	CGO_ENABLED=0 gox -os=$(XC_OS) -arch=$(XC_ARCH) \
 				-osarch=$(XC_EXCLUDE_OSARCH) \
-				-output ./bin/terraform-provider-osc_{{.OS}}_{{.Arch}} .
+				-output ./pkg/terraform-provider-osc_{{.OS}}_{{.Arch}}_$(VERSION)/terraform-provider-osc-$(VERSION) .
 
 vet:
 	@echo "go vet ."
@@ -47,5 +49,22 @@ test-compile:
 		exit 1; \
 	fi
 	go test -c $(TEST) $(TESTARGS)
+
+release:
+	bash scripts/github-releases.sh
+
+docker-image:
+	docker build -t terraform-provider-osc:$(VERSION) .
+
+docker-build:
+	docker run \
+		-v $(PWD)/pkg:/go/src/github.com/remijouannet/terraform-provider-osc/pkg \
+		terraform-provider-osc:$(VERSION) pkg
+
+docker-release:
+	docker run \
+		-v $(PWD)/pkg:/go/src/github.com/remijouannet/terraform-provider-osc/pkg \
+		-e "GITHUB_TOKEN=$(GITHUB_TOKEN)" \
+		terraform-provider-osc:$(VERSION) release 
 
 .PHONY: build test testacc vet fmt fmtcheck errcheck vendor-status test-compile
