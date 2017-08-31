@@ -22,7 +22,7 @@ then
         --name "$version-hyper-alpha-yolo-experimental" \
         --description "risks of explosion" \
         --target $version || echo "failed to create release for $version"
-if
+fi
 
 cd pkg/
 
