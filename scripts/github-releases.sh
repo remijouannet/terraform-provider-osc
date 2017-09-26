@@ -9,19 +9,18 @@ which github-release || echo 'please install the tool github-releases'
 github-release info \
     --user remijouannet \
     --repo terraform-provider-osc \
-    --tag $version || echo "the release doesn't exist"
+    --tag $version
 
 if [ $? != 0 ]
 then
+    echo "the release doesn't exist"
     github-release release \
         --user remijouannet \
         --repo terraform-provider-osc \
         --tag $version \
-        --draft \
         --pre-release \
         --name "$version-hyper-alpha-yolo-experimental" \
-        --description "risks of explosion" \
-        --target $version || echo "failed to create release for $version"
+        --description "risks of explosion" || echo "failed to create release for $version"
 fi
 
 cd pkg/
