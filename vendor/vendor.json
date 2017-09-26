@@ -1281,12 +1281,12 @@
 			"revisionTime": "2017-07-25T21:31:56Z"
 		},
 		{
-			"checksumSHA1": "8WW1IcSuDwDZ4+0lRBDwVapYNyw=",
+			"checksumSHA1": "8kh8+jgPhiyqJVyCs1+OX0D4AyA=",
 			"path": "github.com/hashicorp/terraform",
-			"revision": "efca455c35d0d218a9bfee835a8ec3ef8d4d1c8c",
-			"revisionTime": "2017-07-03T20:27:28Z",
-			"version": "v0.9.11",
-			"versionExact": "v0.9.11"
+			"revision": "8712b03839d1f63c0bfe11cf5f08e94014aeb85c",
+			"revisionTime": "2017-09-19T13:56:27Z",
+			"version": "v0.10.6",
+			"versionExact": "v0.10.6"
 		},
 		{
 			"checksumSHA1": "ExrDQgeh/AFUiAmwczS0O+4iv2k=",
