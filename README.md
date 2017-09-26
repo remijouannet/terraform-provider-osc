@@ -23,7 +23,7 @@ add the following to ~/.terraformrc
 
 ```
 providers {
-  osc = "~/bin/terraform-provider-osc_darwin_amd64_v0.1"
+  osc = "~/bin/terraform-provider-osc_v0.1"
 }
 ```
 
