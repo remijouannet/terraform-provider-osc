@@ -23,7 +23,7 @@ add the following to ~/.terraformrc
 
 ```
 providers {
-  osc = "~/bin/terraform-provider-osc-v0.1"
+  osc = "/home/remi/bin/terraform-provider-osc-v0.1"
 }
 ```
 
