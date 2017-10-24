@@ -6,6 +6,10 @@ XC_EXCLUDE_OSARCH="!darwin/arm !darwin/386"
 VERSION=$$(git describe --abbrev=0 --tags)
 PWD=$$(pwd)
 
+COMMIT=$$(git rev-parse HEAD)
+GOOS=$$(go env GOOS)
+GOARCH=$$(go env GOARCH)
+
 default: build
 
 build: fmt
@@ -25,7 +29,12 @@ pkg: fmt
 	echo "==> Building..."
 	CGO_ENABLED=0 gox -os=$(XC_OS) -arch=$(XC_ARCH) \
 				-osarch=$(XC_EXCLUDE_OSARCH) \
-				-output ./pkg/terraform-provider-osc_{{.OS}}_{{.Arch}}_$(VERSION)/terraform-provider-osc-$(VERSION) .
+				-output ./pkg/terraform-provider-osc_{{.OS}}_{{.Arch}}_$(VERSION)/terraform-provider-osc_$(VERSION) .
+
+bin: fmt
+	mkdir -p ./bin
+	echo "==> Building..."
+	CGO_ENABLED=0 gox -os=$(GOOS) -arch=$(GOARCH) -output ./bin/terraform-provider-osc_$(VERSION) .
 
 vet:
 	@echo "go vet ."
@@ -52,6 +61,11 @@ test-compile:
 
 release:
 	bash scripts/github-releases.sh
+
+docker-bin: docker-image
+	docker run  \
+		-v $(PWD)/bin:/go/src/github.com/remijouannet/terraform-provider-osc/bin \
+		terraform-provider-osc:$(VERSION) bin
 
 docker-image:
 	docker build -t terraform-provider-osc:$(VERSION) .
