@@ -14,7 +14,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -97,12 +96,6 @@ func resourceAwsS3BucketObject() *schema.Resource {
 				Computed:     true,
 			},
 
-			"kms_key_id": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validateArn,
-			},
-
 			"etag": {
 				Type: schema.TypeString,
 				// This will conflict with SSE-C and SSE-KMS encryption and multi-part upload
@@ -179,15 +172,6 @@ func resourceAwsS3BucketObjectPut(d *schema.ResourceData, meta interface{}) erro
 		putInput.ContentDisposition = aws.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("server_side_encryption"); ok {
-		putInput.ServerSideEncryption = aws.String(v.(string))
-	}
-
-	if v, ok := d.GetOk("kms_key_id"); ok {
-		putInput.SSEKMSKeyId = aws.String(v.(string))
-		putInput.ServerSideEncryption = aws.String(s3.ServerSideEncryptionAwsKms)
-	}
-
 	resp, err := s3conn.PutObject(putInput)
 	if err != nil {
 		return fmt.Errorf("Error putting object in S3 bucket (%s): %s", bucket, err)
@@ -232,22 +216,6 @@ func resourceAwsS3BucketObjectRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("version_id", resp.VersionId)
 	d.Set("server_side_encryption", resp.ServerSideEncryption)
 
-	// Only set non-default KMS key ID (one that doesn't match default)
-	if resp.SSEKMSKeyId != nil {
-		// retrieve S3 KMS Default Master Key
-		kmsconn := meta.(*AWSClient).kmsconn
-		kmsresp, err := kmsconn.DescribeKey(&kms.DescribeKeyInput{
-			KeyId: aws.String("alias/aws/s3"),
-		})
-		if err != nil {
-			return fmt.Errorf("Failed to describe default S3 KMS key (alias/aws/s3): %s", err)
-		}
-
-		if *resp.SSEKMSKeyId != *kmsresp.KeyMetadata.Arn {
-			log.Printf("[DEBUG] S3 object is encrypted using a non-default KMS Key ID: %s", *resp.SSEKMSKeyId)
-			d.Set("kms_key_id", resp.SSEKMSKeyId)
-		}
-	}
 	d.Set("etag", strings.Trim(*resp.ETag, `"`))
 
 	// The "STANDARD" (which is also the default) storage
