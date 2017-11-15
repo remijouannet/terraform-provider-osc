@@ -35,11 +35,13 @@ bin: fmt
 	mkdir -p ./bin
 	echo "==> Building..."
 	CGO_ENABLED=0 gox -os=$(GOOS) -arch=$(GOARCH) -output ./bin/terraform-provider-osc_$(VERSION) .
+	chmod 777 ./bin/terraform-provider-osc_$(VERSION)
 
 bin-darwin: fmt
 	mkdir -p ./bin
 	echo "==> Building..."
 	CGO_ENABLED=0 gox -os=darwin -arch=amd64 -output ./bin/terraform-provider-osc_$(VERSION) .
+	chmod 777 ./bin/terraform-provider-osc_$(VERSION)
 
 vet:
 	@echo "go vet ."
