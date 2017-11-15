@@ -13,10 +13,6 @@ import (
 
 // Provider returns a terraform.ResourceProvider.
 func Provider() terraform.ResourceProvider {
-	// TODO: Move the validation to this, requires conditional schemas
-	// TODO: Move the configuration to this, requires validation
-
-	// The actual provider
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"access_key": {
@@ -279,9 +275,6 @@ func init() {
 		"insecure": "Explicitly allow the provider to perform \"insecure\" SSL requests. If omitted," +
 			"default value is `false`",
 
-		"skip_credentials_validation": "Skip the credentials validation via STS API. " +
-			"Used for AWS API implementations that do not have STS available/implemented.",
-
 		"skip_region_validation": "Skip static validation of region name. " +
 			"Used by users of alternative AWS-like APIs or users w/ access to regions that are not public (yet).",
 
@@ -320,9 +313,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Region:                  d.Get("region").(string),
 		MaxRetries:              d.Get("max_retries").(int),
 		Insecure:                d.Get("insecure").(bool),
-		SkipCredsValidation:     d.Get("skip_credentials_validation").(bool),
 		SkipRegionValidation:    d.Get("skip_region_validation").(bool),
-		SkipRequestingAccountId: d.Get("skip_requesting_account_id").(bool),
 		SkipMetadataApiCheck:    d.Get("skip_metadata_api_check").(bool),
 		S3ForcePathStyle:        d.Get("s3_force_path_style").(bool),
 	}

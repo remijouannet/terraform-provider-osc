@@ -44,17 +44,13 @@ type Config struct {
 	AllowedAccountIds   []interface{}
 	ForbiddenAccountIds []interface{}
 
-	DynamoDBEndpoint string
-	KinesisEndpoint  string
 	Ec2Endpoint      string
 	IamEndpoint      string
 	ElbEndpoint      string
 	S3Endpoint       string
 	Insecure         bool
 
-	SkipCredsValidation     bool
 	SkipRegionValidation    bool
-	SkipRequestingAccountId bool
 	SkipMetadataApiCheck    bool
 	S3ForcePathStyle        bool
 }

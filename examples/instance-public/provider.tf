@@ -1,7 +1,6 @@
 provider "osc" {
   profile                     = "${var.profile}"
   region                      = "${var.region}"
-  skip_credentials_validation = true
   skip_region_validation      = true
 
   endpoints {
