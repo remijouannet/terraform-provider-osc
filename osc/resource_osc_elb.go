@@ -69,6 +69,7 @@ func resourceAwsElb() *schema.Resource {
 			"security_groups": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+				ForceNew: true,
 				Optional: true,
 				Computed: true,
 				Set:      schema.HashString,
@@ -88,28 +89,10 @@ func resourceAwsElb() *schema.Resource {
 			"subnets": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+				ForceNew: true,
 				Optional: true,
 				Computed: true,
 				Set:      schema.HashString,
-			},
-
-			"idle_timeout": &schema.Schema{
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Default:      60,
-				ValidateFunc: validateIntegerInRange(1, 3600),
-			},
-
-			"connection_draining": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-
-			"connection_draining_timeout": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  300,
 			},
 
 			"access_logs": &schema.Schema{
@@ -173,6 +156,7 @@ func resourceAwsElb() *schema.Resource {
 						"ssl_certificate_id": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
+							Default:  nil,
 						},
 					},
 				},
@@ -388,10 +372,10 @@ func resourceAwsElbRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	d.Set("subnets", flattenStringList(lb.Subnets))
-	d.Set("idle_timeout", lbAttrs.ConnectionSettings.IdleTimeout)
-	d.Set("connection_draining", lbAttrs.ConnectionDraining.Enabled)
-	d.Set("connection_draining_timeout", lbAttrs.ConnectionDraining.Timeout)
-	d.Set("cross_zone_load_balancing", lbAttrs.CrossZoneLoadBalancing.Enabled)
+	//d.Set("idle_timeout", lbAttrs.ConnectionSettings.IdleTimeout)
+	//d.Set("connection_draining", lbAttrs.ConnectionDraining.Enabled)
+	//d.Set("connection_draining_timeout", lbAttrs.ConnectionDraining.Timeout)
+	//d.Set("cross_zone_load_balancing", lbAttrs.CrossZoneLoadBalancing.Enabled)
 	if lbAttrs.AccessLog != nil {
 		// The AWS API does not allow users to remove access_logs, only disable them.
 		// During creation of the ELB, Terraform sets the access_logs to disabled,
@@ -539,21 +523,12 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 		d.SetPartial("instances")
 	}
 
-	if d.HasChange("cross_zone_load_balancing") || d.HasChange("idle_timeout") || d.HasChange("access_logs") {
-		attrs := elb.ModifyLoadBalancerAttributesInput{
-			LoadBalancerName: aws.String(d.Get("name").(string)),
-			LoadBalancerAttributes: &elb.LoadBalancerAttributes{
-				CrossZoneLoadBalancing: &elb.CrossZoneLoadBalancing{
-					Enabled: aws.Bool(d.Get("cross_zone_load_balancing").(bool)),
-				},
-				ConnectionSettings: &elb.ConnectionSettings{
-					IdleTimeout: aws.Int64(int64(d.Get("idle_timeout").(int))),
-				},
-			},
-		}
-
-		logs := d.Get("access_logs").([]interface{})
+	if d.HasChange("access_logs") {
+        logs := d.Get("access_logs").([]interface{})
 		if len(logs) == 1 {
+            attrs := elb.ModifyLoadBalancerAttributesInput{
+                LoadBalancerName: aws.String(d.Get("name").(string)),
+            }
 			l := logs[0].(map[string]interface{})
 			accessLog := &elb.AccessLog{
 				Enabled:      aws.Bool(l["enabled"].(bool)),
@@ -566,69 +541,18 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 
 			attrs.LoadBalancerAttributes.AccessLog = accessLog
+            log.Printf("[DEBUG] ELB Modify Load Balancer Attributes Request: %#v", attrs)
+            _, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
+            if err != nil {
+                return fmt.Errorf("Failure configuring ELB attributes: %s", err)
+            }
 		} else if len(logs) == 0 {
 			// disable access logs
-			attrs.LoadBalancerAttributes.AccessLog = &elb.AccessLog{
-				Enabled: aws.Bool(false),
-			}
+			//attrs.LoadBalancerAttributes.AccessLog = &elb.AccessLog{
+			//	Enabled: aws.Bool(false),
+			//}
 		}
-
-		log.Printf("[DEBUG] ELB Modify Load Balancer Attributes Request: %#v", attrs)
-		_, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
-		if err != nil {
-			return fmt.Errorf("Failure configuring ELB attributes: %s", err)
-		}
-
-		d.SetPartial("cross_zone_load_balancing")
-		d.SetPartial("idle_timeout")
-		d.SetPartial("connection_draining_timeout")
-	}
-
-	// We have to do these changes separately from everything else since
-	// they have some weird undocumented rules. You can't set the timeout
-	// without having connection draining to true, so we set that to true,
-	// set the timeout, then reset it to false if requested.
-	if d.HasChange("connection_draining") || d.HasChange("connection_draining_timeout") {
-		// We do timeout changes first since they require us to set draining
-		// to true for a hot second.
-		if d.HasChange("connection_draining_timeout") {
-			attrs := elb.ModifyLoadBalancerAttributesInput{
-				LoadBalancerName: aws.String(d.Get("name").(string)),
-				LoadBalancerAttributes: &elb.LoadBalancerAttributes{
-					ConnectionDraining: &elb.ConnectionDraining{
-						Enabled: aws.Bool(true),
-						Timeout: aws.Int64(int64(d.Get("connection_draining_timeout").(int))),
-					},
-				},
-			}
-
-			_, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
-			if err != nil {
-				return fmt.Errorf("Failure configuring ELB attributes: %s", err)
-			}
-
-			d.SetPartial("connection_draining_timeout")
-		}
-
-		// Then we always set connection draining even if there is no change.
-		// This lets us reset to "false" if requested even with a timeout
-		// change.
-		attrs := elb.ModifyLoadBalancerAttributesInput{
-			LoadBalancerName: aws.String(d.Get("name").(string)),
-			LoadBalancerAttributes: &elb.LoadBalancerAttributes{
-				ConnectionDraining: &elb.ConnectionDraining{
-					Enabled: aws.Bool(d.Get("connection_draining").(bool)),
-				},
-			},
-		}
-
-		_, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
-		if err != nil {
-			return fmt.Errorf("Failure configuring ELB attributes: %s", err)
-		}
-
-		d.SetPartial("connection_draining")
-	}
+    }
 
 	if d.HasChange("health_check") {
 		hc := d.Get("health_check").([]interface{})
@@ -652,109 +576,109 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if d.HasChange("security_groups") {
-		groups := d.Get("security_groups").(*schema.Set).List()
+	//if d.HasChange("security_groups") {
+	//	groups := d.Get("security_groups").(*schema.Set).List()
+    //
+	//	applySecurityGroupsOpts := elb.ApplySecurityGroupsToLoadBalancerInput{
+	//		LoadBalancerName: aws.String(d.Id()),
+	//		SecurityGroups:   expandStringList(groups),
+	//	}
+    //
+	//	_, err := elbconn.ApplySecurityGroupsToLoadBalancer(&applySecurityGroupsOpts)
+	//	if err != nil {
+	//		return fmt.Errorf("Failure applying security groups to ELB: %s", err)
+	//	}
+    //
+	//	d.SetPartial("security_groups")
+	//}
 
-		applySecurityGroupsOpts := elb.ApplySecurityGroupsToLoadBalancerInput{
-			LoadBalancerName: aws.String(d.Id()),
-			SecurityGroups:   expandStringList(groups),
-		}
+	//if d.HasChange("availability_zones") {
+	//	o, n := d.GetChange("availability_zones")
+	//	os := o.(*schema.Set)
+	//	ns := n.(*schema.Set)
+    //
+	//	removed := expandStringList(os.Difference(ns).List())
+	//	added := expandStringList(ns.Difference(os).List())
+    //
+	//	if len(added) > 0 {
+	//		enableOpts := &elb.EnableAvailabilityZonesForLoadBalancerInput{
+	//			LoadBalancerName:  aws.String(d.Id()),
+	//			AvailabilityZones: added,
+	//		}
+    //
+	//		log.Printf("[DEBUG] ELB enable availability zones opts: %s", enableOpts)
+	//		_, err := elbconn.EnableAvailabilityZonesForLoadBalancer(enableOpts)
+	//		if err != nil {
+	//			return fmt.Errorf("Failure enabling ELB availability zones: %s", err)
+	//		}
+	//	}
+    //
+	//	if len(removed) > 0 {
+	//		disableOpts := &elb.DisableAvailabilityZonesForLoadBalancerInput{
+	//			LoadBalancerName:  aws.String(d.Id()),
+	//			AvailabilityZones: removed,
+	//		}
+    //
+	//		log.Printf("[DEBUG] ELB disable availability zones opts: %s", disableOpts)
+	//		_, err := elbconn.DisableAvailabilityZonesForLoadBalancer(disableOpts)
+	//		if err != nil {
+	//			return fmt.Errorf("Failure disabling ELB availability zones: %s", err)
+	//		}
+	//	}
+    //
+	//	d.SetPartial("availability_zones")
+	//}
 
-		_, err := elbconn.ApplySecurityGroupsToLoadBalancer(&applySecurityGroupsOpts)
-		if err != nil {
-			return fmt.Errorf("Failure applying security groups to ELB: %s", err)
-		}
-
-		d.SetPartial("security_groups")
-	}
-
-	if d.HasChange("availability_zones") {
-		o, n := d.GetChange("availability_zones")
-		os := o.(*schema.Set)
-		ns := n.(*schema.Set)
-
-		removed := expandStringList(os.Difference(ns).List())
-		added := expandStringList(ns.Difference(os).List())
-
-		if len(added) > 0 {
-			enableOpts := &elb.EnableAvailabilityZonesForLoadBalancerInput{
-				LoadBalancerName:  aws.String(d.Id()),
-				AvailabilityZones: added,
-			}
-
-			log.Printf("[DEBUG] ELB enable availability zones opts: %s", enableOpts)
-			_, err := elbconn.EnableAvailabilityZonesForLoadBalancer(enableOpts)
-			if err != nil {
-				return fmt.Errorf("Failure enabling ELB availability zones: %s", err)
-			}
-		}
-
-		if len(removed) > 0 {
-			disableOpts := &elb.DisableAvailabilityZonesForLoadBalancerInput{
-				LoadBalancerName:  aws.String(d.Id()),
-				AvailabilityZones: removed,
-			}
-
-			log.Printf("[DEBUG] ELB disable availability zones opts: %s", disableOpts)
-			_, err := elbconn.DisableAvailabilityZonesForLoadBalancer(disableOpts)
-			if err != nil {
-				return fmt.Errorf("Failure disabling ELB availability zones: %s", err)
-			}
-		}
-
-		d.SetPartial("availability_zones")
-	}
-
-	if d.HasChange("subnets") {
-		o, n := d.GetChange("subnets")
-		os := o.(*schema.Set)
-		ns := n.(*schema.Set)
-
-		removed := expandStringList(os.Difference(ns).List())
-		added := expandStringList(ns.Difference(os).List())
-
-		if len(removed) > 0 {
-			detachOpts := &elb.DetachLoadBalancerFromSubnetsInput{
-				LoadBalancerName: aws.String(d.Id()),
-				Subnets:          removed,
-			}
-
-			log.Printf("[DEBUG] ELB detach subnets opts: %s", detachOpts)
-			_, err := elbconn.DetachLoadBalancerFromSubnets(detachOpts)
-			if err != nil {
-				return fmt.Errorf("Failure removing ELB subnets: %s", err)
-			}
-		}
-
-		if len(added) > 0 {
-			attachOpts := &elb.AttachLoadBalancerToSubnetsInput{
-				LoadBalancerName: aws.String(d.Id()),
-				Subnets:          added,
-			}
-
-			log.Printf("[DEBUG] ELB attach subnets opts: %s", attachOpts)
-			err := resource.Retry(1*time.Minute, func() *resource.RetryError {
-				_, err := elbconn.AttachLoadBalancerToSubnets(attachOpts)
-				if err != nil {
-					if awsErr, ok := err.(awserr.Error); ok {
-						// eventually consistent issue with removing a subnet in AZ1 and
-						// immediately adding a new one in the same AZ
-						if awsErr.Code() == "InvalidConfigurationRequest" && strings.Contains(awsErr.Message(), "cannot be attached to multiple subnets in the same AZ") {
-							log.Printf("[DEBUG] retrying az association")
-							return resource.RetryableError(awsErr)
-						}
-					}
-					return resource.NonRetryableError(err)
-				}
-				return nil
-			})
-			if err != nil {
-				return fmt.Errorf("Failure adding ELB subnets: %s", err)
-			}
-		}
-
-		d.SetPartial("subnets")
-	}
+	//if d.HasChange("subnets") {
+	//	o, n := d.GetChange("subnets")
+	//	os := o.(*schema.Set)
+	//	ns := n.(*schema.Set)
+//
+	//	removed := expandStringList(os.Difference(ns).List())
+	//	added := expandStringList(ns.Difference(os).List())
+//
+	//	if len(removed) > 0 {
+	//		detachOpts := &elb.DetachLoadBalancerFromSubnetsInput{
+	//			LoadBalancerName: aws.String(d.Id()),
+	//			Subnets:          removed,
+	//		}
+//
+	//		log.Printf("[DEBUG] ELB detach subnets opts: %s", detachOpts)
+	//		_, err := elbconn.DetachLoadBalancerFromSubnets(detachOpts)
+	//		if err != nil {
+	//			return fmt.Errorf("Failure removing ELB subnets: %s", err)
+	//		}
+	//	}
+//
+	//	if len(added) > 0 {
+	//		attachOpts := &elb.AttachLoadBalancerToSubnetsInput{
+	//			LoadBalancerName: aws.String(d.Id()),
+	//			Subnets:          added,
+	//		}
+//
+	//		log.Printf("[DEBUG] ELB attach subnets opts: %s", attachOpts)
+	//		err := resource.Retry(1*time.Minute, func() *resource.RetryError {
+	//			_, err := elbconn.AttachLoadBalancerToSubnets(attachOpts)
+	//			if err != nil {
+	//				if awsErr, ok := err.(awserr.Error); ok {
+	//					// eventually consistent issue with removing a subnet in AZ1 and
+	//					// immediately adding a new one in the same AZ
+	//					if awsErr.Code() == "InvalidConfigurationRequest" && strings.Contains(awsErr.Message(), "cannot be attached to multiple subnets in the same AZ") {
+	//						log.Printf("[DEBUG] retrying az association")
+	//						return resource.RetryableError(awsErr)
+	//					}
+	//				}
+	//				return resource.NonRetryableError(err)
+	//			}
+	//			return nil
+	//		})
+	//		if err != nil {
+	//			return fmt.Errorf("Failure adding ELB subnets: %s", err)
+	//		}
+	//	}
+//
+	//	d.SetPartial("subnets")
+	//}
 
 	if err := setTagsELB(elbconn, d); err != nil {
 		return err

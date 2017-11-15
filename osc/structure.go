@@ -49,7 +49,7 @@ func expandListeners(configured []interface{}) ([]*elb.Listener, error) {
 			Protocol:         aws.String(data["lb_protocol"].(string)),
 		}
 
-		if v, ok := data["ssl_certificate_id"]; ok {
+		if v, ok := data["ssl_certificate_id"]; ok && data["ssl_certificate_id"] != nil && data["ssl_certificate_id"] != "" {
 			l.SSLCertificateId = aws.String(v.(string))
 		}
 
