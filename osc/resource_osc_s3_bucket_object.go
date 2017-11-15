@@ -103,7 +103,7 @@ func resourceAwsS3BucketObject() *schema.Resource {
 				// See http://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html
 				Optional:      true,
 				Computed:      true,
-				ConflictsWith: []string{"kms_key_id", "server_side_encryption"},
+				ConflictsWith: []string{"server_side_encryption"},
 			},
 
 			"version_id": {
