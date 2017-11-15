@@ -90,22 +90,6 @@ func Provider() terraform.ResourceProvider {
 				Set:           schema.HashString,
 			},
 
-			"dynamodb_endpoint": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: descriptions["dynamodb_endpoint"],
-				Removed:     "Use `dynamodb` inside `endpoints` block instead",
-			},
-
-			"kinesis_endpoint": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: descriptions["kinesis_endpoint"],
-				Removed:     "Use `kinesis` inside `endpoints` block instead",
-			},
-
 			"endpoints": endpointsSchema(),
 
 			"insecure": {
@@ -115,25 +99,11 @@ func Provider() terraform.ResourceProvider {
 				Description: descriptions["insecure"],
 			},
 
-			"skip_credentials_validation": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: descriptions["skip_credentials_validation"],
-			},
-
 			"skip_region_validation": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 				Description: descriptions["skip_region_validation"],
-			},
-
-			"skip_requesting_account_id": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: descriptions["skip_requesting_account_id"],
 			},
 
 			"skip_metadata_api_check": {
@@ -152,14 +122,12 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"osc_acm_certificate":         dataSourceAwsAcmCertificate(),
 			"osc_ami":                     dataSourceAwsAmi(),
 			"osc_availability_zone":       dataSourceAwsAvailabilityZone(),
 			"osc_availability_zones":      dataSourceAwsAvailabilityZones(),
 			"osc_billing_service_account": dataSourceAwsBillingServiceAccount(),
 			"osc_caller_identity":         dataSourceAwsCallerIdentity(),
 			"osc_canonical_user_id":       dataSourceAwsCanonicalUserId(),
-			"osc_db_instance":             dataSourceAwsDbInstance(),
 			"osc_ebs_snapshot":            dataSourceAwsEbsSnapshot(),
 			"osc_ebs_volume":              dataSourceAwsEbsVolume(),
 			"osc_eip":                     dataSourceAwsEip(),
@@ -202,7 +170,6 @@ func Provider() terraform.ResourceProvider {
 			"osc_api_gateway_rest_api":                resourceAwsApiGatewayRestApi(),
 			"osc_app_cookie_stickiness_policy":        resourceAwsAppCookieStickinessPolicy(),
 			"osc_customer_gateway":                    resourceAwsCustomerGateway(),
-			"osc_directory_service_directory":         resourceAwsDirectoryServiceDirectory(),
 			"osc_ebs_snapshot":                        resourceAwsEbsSnapshot(),
 			"osc_ebs_volume":                          resourceAwsEbsVolume(),
 			"osc_eip":                                 resourceAwsEip(),
@@ -232,13 +199,6 @@ func Provider() terraform.ResourceProvider {
 			"osc_instance":                            resourceAwsInstance(),
 			"osc_internet_gateway":                    resourceAwsInternetGateway(),
 			"osc_key_pair":                            resourceAwsKeyPair(),
-			"osc_kms_alias":                           resourceAwsKmsAlias(),
-			"osc_kms_key":                             resourceAwsKmsKey(),
-			"osc_lambda_function":                     resourceAwsLambdaFunction(),
-			"osc_lambda_event_source_mapping":         resourceAwsLambdaEventSourceMapping(),
-			"osc_lambda_alias":                        resourceAwsLambdaAlias(),
-			"osc_lambda_permission":                   resourceAwsLambdaPermission(),
-			"osc_launch_configuration":                resourceAwsLaunchConfiguration(),
 			"osc_lb_cookie_stickiness_policy":         resourceAwsLBCookieStickinessPolicy(),
 			"osc_load_balancer_policy":                resourceAwsLoadBalancerPolicy(),
 			"osc_load_balancer_backend_server_policy": resourceAwsLoadBalancerBackendServerPolicies(),

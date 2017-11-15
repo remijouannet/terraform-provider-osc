@@ -36,6 +36,11 @@ bin: fmt
 	echo "==> Building..."
 	CGO_ENABLED=0 gox -os=$(GOOS) -arch=$(GOARCH) -output ./bin/terraform-provider-osc_$(VERSION) .
 
+bin-darwin: fmt
+	mkdir -p ./bin
+	echo "==> Building..."
+	CGO_ENABLED=0 gox -os=darwin -arch=amd64 -output ./bin/terraform-provider-osc_$(VERSION) .
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
@@ -66,6 +71,11 @@ docker-bin: docker-image
 	docker run  \
 		-v $(PWD)/bin:/go/src/github.com/remijouannet/terraform-provider-osc/bin \
 		terraform-provider-osc:$(VERSION) bin
+
+docker-bin-darwin: docker-image
+	docker run  \
+		-v $(PWD)/bin:/go/src/github.com/remijouannet/terraform-provider-osc/bin \
+		terraform-provider-osc:$(VERSION) bin-darwin
 
 docker-image:
 	docker build -t terraform-provider-osc:$(VERSION) .

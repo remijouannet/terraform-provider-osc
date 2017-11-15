@@ -5,7 +5,7 @@ Requirements
 ------------
 
 -   [Terraform](https://www.terraform.io/downloads.html) 0.10.2 
--   [Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
+-   [Go](https://golang.org/doc/install) 1.9 (to build the provider plugin)
 
 Install
 ---------------------
@@ -13,10 +13,10 @@ Install
 Download the binary and put it in the same folder than terraform binary
 
 ```
-$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.1/terraform-provider-osc_darwin_amd64_v0.1.zip
-$ unzip terraform-provider-osc_darwin_amd64_v0.1.zip
-$ mkdir ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.1/terraform-provider-osc_v0.1 ~/.terraform.d/plugins/
-$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.1
+$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.1/terraform-provider-osc_darwin_amd64_v0.4.zip
+$ unzip terraform-provider-osc_darwin_amd64_v0.4.zip
+$ mkdir ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.1/terraform-provider-osc_v0.4 ~/.terraform.d/plugins/
+$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.4
 ```
 
 Build without docker

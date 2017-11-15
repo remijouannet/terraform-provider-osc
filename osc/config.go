@@ -14,54 +14,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/acm"
 	"github.com/aws/aws-sdk-go/service/apigateway"
-	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/service/cloudfront"
-	"github.com/aws/aws-sdk-go/service/cloudtrail"
-	"github.com/aws/aws-sdk-go/service/cloudwatch"
-	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
-	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
-	"github.com/aws/aws-sdk-go/service/codebuild"
-	"github.com/aws/aws-sdk-go/service/codecommit"
-	"github.com/aws/aws-sdk-go/service/codedeploy"
-	"github.com/aws/aws-sdk-go/service/databasemigrationservice"
-	"github.com/aws/aws-sdk-go/service/directoryservice"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/aws/aws-sdk-go/service/efs"
-	"github.com/aws/aws-sdk-go/service/elasticache"
-	"github.com/aws/aws-sdk-go/service/elasticbeanstalk"
-	elasticsearch "github.com/aws/aws-sdk-go/service/elasticsearchservice"
-	"github.com/aws/aws-sdk-go/service/elastictranscoder"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/aws/aws-sdk-go/service/emr"
-	"github.com/aws/aws-sdk-go/service/firehose"
-	"github.com/aws/aws-sdk-go/service/glacier"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/inspector"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-sdk-go/service/kms"
-	"github.com/aws/aws-sdk-go/service/lambda"
-	"github.com/aws/aws-sdk-go/service/lightsail"
-	"github.com/aws/aws-sdk-go/service/opsworks"
-	"github.com/aws/aws-sdk-go/service/rds"
-	"github.com/aws/aws-sdk-go/service/redshift"
-	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/ses"
-	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/simpledb"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/service/waf"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
@@ -102,57 +60,15 @@ type Config struct {
 }
 
 type AWSClient struct {
-	cfconn                *cloudformation.CloudFormation
-	cloudfrontconn        *cloudfront.CloudFront
-	cloudtrailconn        *cloudtrail.CloudTrail
-	cloudwatchconn        *cloudwatch.CloudWatch
-	cloudwatchlogsconn    *cloudwatchlogs.CloudWatchLogs
-	cloudwatcheventsconn  *cloudwatchevents.CloudWatchEvents
-	dmsconn               *databasemigrationservice.DatabaseMigrationService
-	dsconn                *directoryservice.DirectoryService
-	dynamodbconn          *dynamodb.DynamoDB
 	ec2conn               *ec2.EC2
-	ecrconn               *ecr.ECR
-	ecsconn               *ecs.ECS
-	efsconn               *efs.EFS
 	elbconn               *elb.ELB
 	elbv2conn             *elbv2.ELBV2
-	emrconn               *emr.EMR
-	esconn                *elasticsearch.ElasticsearchService
-	acmconn               *acm.ACM
 	apigateway            *apigateway.APIGateway
-	appautoscalingconn    *applicationautoscaling.ApplicationAutoScaling
-	autoscalingconn       *autoscaling.AutoScaling
 	s3conn                *s3.S3
-	sesConn               *ses.SES
-	simpledbconn          *simpledb.SimpleDB
-	sqsconn               *sqs.SQS
-	snsconn               *sns.SNS
-	stsconn               *sts.STS
-	redshiftconn          *redshift.Redshift
-	r53conn               *route53.Route53
 	partition             string
 	accountid             string
 	region                string
-	rdsconn               *rds.RDS
 	iamconn               *iam.IAM
-	kinesisconn           *kinesis.Kinesis
-	kmsconn               *kms.KMS
-	firehoseconn          *firehose.Firehose
-	inspectorconn         *inspector.Inspector
-	elasticacheconn       *elasticache.ElastiCache
-	elasticbeanstalkconn  *elasticbeanstalk.ElasticBeanstalk
-	elastictranscoderconn *elastictranscoder.ElasticTranscoder
-	lambdaconn            *lambda.Lambda
-	lightsailconn         *lightsail.Lightsail
-	opsworksconn          *opsworks.OpsWorks
-	glacierconn           *glacier.Glacier
-	codebuildconn         *codebuild.CodeBuild
-	codedeployconn        *codedeploy.CodeDeploy
-	codecommitconn        *codecommit.CodeCommit
-	sfnconn               *sfn.SFN
-	ssmconn               *ssm.SSM
-	wafconn               *waf.WAF
 }
 
 // Client configures and returns a fully initialized AWSClient
@@ -229,91 +145,24 @@ func (c *Config) Client() (interface{}, error) {
 		sess.Handlers.UnmarshalError.PushFrontNamed(debugAuthFailure)
 	}
 
-	// Some services exist only in us-east-1, e.g. because they manage
-	// resources that can span across multiple regions, or because
-	// signature format v4 requires region to be us-east-1 for global
-	// endpoints:
-	// http://docs.aws.amazon.com/general/latest/gr/sigv4_changes.html
-	usEast1Sess := sess.Copy(&aws.Config{Region: aws.String("us-east-1")})
-
 	// Some services have user-configurable endpoints
 	awsEc2Sess := sess.Copy(&aws.Config{Endpoint: aws.String(c.Ec2Endpoint)})
 	awsElbSess := sess.Copy(&aws.Config{Endpoint: aws.String(c.ElbEndpoint)})
 	awsIamSess := sess.Copy(&aws.Config{Endpoint: aws.String(c.IamEndpoint)})
 	awsS3Sess := sess.Copy(&aws.Config{Endpoint: aws.String(c.S3Endpoint)})
-	dynamoSess := sess.Copy(&aws.Config{Endpoint: aws.String(c.DynamoDBEndpoint)})
-	kinesisSess := sess.Copy(&aws.Config{Endpoint: aws.String(c.KinesisEndpoint)})
 
 	// These two services need to be set up early so we can check on AccountID
 	client.iamconn = iam.New(awsIamSess)
-	client.stsconn = sts.New(sess)
-
-	if !c.SkipCredsValidation {
-		err = c.ValidateCredentials(client.stsconn)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !c.SkipRequestingAccountId {
-		partition, accountId, err := GetAccountInfo(client.iamconn, client.stsconn, cp.ProviderName)
-		if err == nil {
-			client.partition = partition
-			client.accountid = accountId
-		}
-	}
 
 	authErr := c.ValidateAccountId(client.accountid)
 	if authErr != nil {
 		return nil, authErr
 	}
 
-	client.acmconn = acm.New(sess)
-	client.apigateway = apigateway.New(sess)
-	client.appautoscalingconn = applicationautoscaling.New(sess)
-	client.autoscalingconn = autoscaling.New(sess)
-	client.cfconn = cloudformation.New(sess)
-	client.cloudfrontconn = cloudfront.New(sess)
-	client.cloudtrailconn = cloudtrail.New(sess)
-	client.cloudwatchconn = cloudwatch.New(sess)
-	client.cloudwatcheventsconn = cloudwatchevents.New(sess)
-	client.cloudwatchlogsconn = cloudwatchlogs.New(sess)
-	client.codecommitconn = codecommit.New(sess)
-	client.codebuildconn = codebuild.New(sess)
-	client.codedeployconn = codedeploy.New(sess)
-	client.dmsconn = databasemigrationservice.New(sess)
-	client.dsconn = directoryservice.New(sess)
-	client.dynamodbconn = dynamodb.New(dynamoSess)
 	client.ec2conn = ec2.New(awsEc2Sess)
-	client.ecrconn = ecr.New(sess)
-	client.ecsconn = ecs.New(sess)
-	client.efsconn = efs.New(sess)
-	client.elasticacheconn = elasticache.New(sess)
-	client.elasticbeanstalkconn = elasticbeanstalk.New(sess)
-	client.elastictranscoderconn = elastictranscoder.New(sess)
 	client.elbconn = elb.New(awsElbSess)
 	client.elbv2conn = elbv2.New(awsElbSess)
-	client.emrconn = emr.New(sess)
-	client.esconn = elasticsearch.New(sess)
-	client.firehoseconn = firehose.New(sess)
-	client.inspectorconn = inspector.New(sess)
-	client.glacierconn = glacier.New(sess)
-	client.kinesisconn = kinesis.New(kinesisSess)
-	client.kmsconn = kms.New(sess)
-	client.lambdaconn = lambda.New(sess)
-	client.lightsailconn = lightsail.New(usEast1Sess)
-	client.opsworksconn = opsworks.New(usEast1Sess)
-	client.r53conn = route53.New(usEast1Sess)
-	client.rdsconn = rds.New(sess)
-	client.redshiftconn = redshift.New(sess)
-	client.simpledbconn = simpledb.New(sess)
 	client.s3conn = s3.New(awsS3Sess)
-	client.sesConn = ses.New(sess)
-	client.sfnconn = sfn.New(sess)
-	client.snsconn = sns.New(sess)
-	client.sqsconn = sqs.New(sess)
-	client.ssmconn = ssm.New(sess)
-	client.wafconn = waf.New(sess)
 
 	return &client, nil
 }
@@ -348,11 +197,6 @@ func (c *Config) ValidateRegion() error {
 	return fmt.Errorf("Not a valid region: %s", c.Region)
 }
 
-// Validate credentials early and fail before we do any graph walking.
-func (c *Config) ValidateCredentials(stsconn *sts.STS) error {
-	_, err := stsconn.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	return err
-}
 
 // ValidateAccountId returns a context-specific error if the configured account
 // id is explicitly forbidden or not authorised; and nil if it is authorised.
@@ -388,7 +232,7 @@ func (c *Config) ValidateAccountId(accountId string) error {
 var addTerraformVersionToUserAgent = request.NamedHandler{
 	Name: "terraform.TerraformVersionUserAgentHandler",
 	Fn: request.MakeAddToUserAgentHandler(
-		"APN/1.0 HashiCorp/1.0 Terraform", terraform.VersionString()),
+		"APN/1.0 HashiCorp/1.0 terraform-provider-osc/v0.3 Terraform", terraform.VersionString()),
 }
 
 var debugAuthFailure = request.NamedHandler{
