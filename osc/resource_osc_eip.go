@@ -81,7 +81,7 @@ func resourceAwsEipCreate(d *schema.ResourceData, meta interface{}) error {
 	ec2conn := meta.(*AWSClient).ec2conn
 
 	// By default, we're not in a VPC
-	domainOpt := ""
+	domainOpt := "standard"
 	if v := d.Get("vpc"); v != nil && v.(bool) {
 		domainOpt = "vpc"
 	}
