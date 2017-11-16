@@ -278,9 +278,6 @@ func init() {
 		"skip_region_validation": "Skip static validation of region name. " +
 			"Used by users of alternative AWS-like APIs or users w/ access to regions that are not public (yet).",
 
-		"skip_requesting_account_id": "Skip requesting the account ID. " +
-			"Used for AWS API implementations that do not have IAM/STS API and/or metadata API.",
-
 		"skip_medatadata_api_check": "Skip the AWS Metadata API check. " +
 			"Used for AWS API implementations that do not have a metadata api endpoint.",
 

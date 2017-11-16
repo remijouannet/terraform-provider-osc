@@ -150,6 +150,12 @@ func (c *Config) Client() (interface{}, error) {
 	// These two services need to be set up early so we can check on AccountID
 	client.iamconn = iam.New(awsIamSess)
 
+    partition, accountId, err := GetAccountInfo(client.iamconn, nil, cp.ProviderName)
+    if err == nil {
+        client.partition = partition
+        client.accountid = accountId
+    }
+
 	authErr := c.ValidateAccountId(client.accountid)
 	if authErr != nil {
 		return nil, authErr
@@ -228,7 +234,7 @@ func (c *Config) ValidateAccountId(accountId string) error {
 var addTerraformVersionToUserAgent = request.NamedHandler{
 	Name: "terraform.TerraformVersionUserAgentHandler",
 	Fn: request.MakeAddToUserAgentHandler(
-		"APN/1.0 HashiCorp/1.0 terraform-provider-osc/v0.3 Terraform", terraform.VersionString()),
+		"APN/1.0 HashiCorp/1.0 terraform-provider-osc/v0.4 Terraform", terraform.VersionString()),
 }
 
 var debugAuthFailure = request.NamedHandler{
