@@ -5,6 +5,12 @@ cd to the example you want to test
 
 * edit terraform.tfvars with your informations : keypair, omi, current public IP ...
 
+* init your terraform
+
+```
+terraform init
+```
+
 * plan and apply
 
 ```
