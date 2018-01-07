@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -115,7 +116,16 @@ func setTags(conn *ec2.EC2, d *schema.ResourceData) error {
 				}
 				return nil
 			})
-			if err != nil {
+
+			if err != nil && err.(awserr.Error).Code() == "Client.InvalidID" && strings.Contains(d.Id(), "dopt-"){
+                return awserr.New(
+                    err.(awserr.Error).Code(),
+                    fmt.Sprintf("%s, Tagging for DHCP Options isn't support at the moment", err.(awserr.Error).Message()),
+                    err.(awserr.Error).OrigErr(),
+                )
+            }
+
+            if err != nil {
 				return err
 			}
 		}
