@@ -53,6 +53,11 @@ func resourceAwsEbsSnapshot() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+            "tags": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				ForceNew: true,
+            },
 		},
 	}
 }
@@ -78,6 +83,10 @@ func resourceAwsEbsSnapshotCreate(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return err
 	}
+
+    if err := setTags(conn, d); err != nil {
+		log.Printf("[WARN] error setting tags: %s", err)
+    }
 
 	return resourceAwsEbsSnapshotRead(d, meta)
 }
@@ -105,6 +114,10 @@ func resourceAwsEbsSnapshotRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("data_encryption_key_id", snapshot.DataEncryptionKeyId)
 	d.Set("kms_keey_id", snapshot.KmsKeyId)
 	d.Set("volume_size", snapshot.VolumeSize)
+
+    if err := d.Set("tags", tagsToMap(snapshot.Tags)); err != nil {
+		log.Printf("[WARN] error saving tags to state: %s", err)
+    }
 
 	return nil
 }
