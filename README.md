@@ -13,10 +13,10 @@ Install
 Download the binary and put it in the same folder than terraform binary
 
 ```
-$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.1/terraform-provider-osc_darwin_amd64_v0.4.zip
-$ unzip terraform-provider-osc_darwin_amd64_v0.4.zip
-$ mkdir ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.1/terraform-provider-osc_v0.4 ~/.terraform.d/plugins/
-$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.4
+$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.5/terraform-provider-osc_darwin_amd64_v0.5.zip
+$ unzip terraform-provider-osc_darwin_amd64_v0.5.zip
+$ mkdir ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.5/terraform-provider-osc_v0.5 ~/.terraform.d/plugins/
+$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.5
 ```
 
 Build without docker
