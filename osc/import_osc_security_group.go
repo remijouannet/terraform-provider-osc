@@ -93,7 +93,7 @@ func resourceAwsSecurityGroupImportStatePermPair(sg *ec2.SecurityGroup, ruleType
 	ruleResource := resourceAwsSecurityGroupRule()
 	d := ruleResource.Data(nil)
 	d.SetId(id)
-	d.SetType("aws_security_group_rule")
+	d.SetType("osc_security_group_rule")
 	d.Set("security_group_id", sgId)
 	d.Set("type", ruleType)
 

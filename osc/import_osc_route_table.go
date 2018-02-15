@@ -48,7 +48,7 @@ func resourceAwsRouteTableImportState(
 
 			// Minimal data for route
 			d := subResource.Data(nil)
-			d.SetType("aws_route")
+			d.SetType("osc_route")
 			d.Set("route_table_id", id)
 			d.Set("destination_cidr_block", route.DestinationCidrBlock)
 			d.SetId(routeIDHash(d, route))
@@ -67,7 +67,7 @@ func resourceAwsRouteTableImportState(
 
 			// Minimal data for route
 			d := subResource.Data(nil)
-			d.SetType("aws_route_table_association")
+			d.SetType("osc_route_table_association")
 			d.Set("route_table_id", assoc.RouteTableId)
 			d.SetId(*assoc.RouteTableAssociationId)
 			results = append(results, d)
@@ -86,7 +86,7 @@ func resourceAwsRouteTableImportState(
 
 			// Minimal data for route
 			d := subResource.Data(nil)
-			d.SetType("aws_main_route_table_association")
+			d.SetType("osc_main_route_table_association")
 			d.Set("route_table_id", id)
 			d.Set("vpc_id", table.VpcId)
 			d.SetId(*assoc.RouteTableAssociationId)
