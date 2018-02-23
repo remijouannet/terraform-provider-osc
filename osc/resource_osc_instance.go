@@ -32,6 +32,12 @@ func resourceAwsInstance() *schema.Resource {
 		SchemaVersion: 1,
 		MigrateState:  resourceAwsInstanceMigrateState,
 
+        Timeouts: &schema.ResourceTimeout{
+            Create: schema.DefaultTimeout(10 * time.Minute),
+            Update: schema.DefaultTimeout(10 * time.Minute),
+            Delete: schema.DefaultTimeout(20 * time.Minute),
+        },
+
 		Schema: map[string]*schema.Schema{
 			"ami": {
 				Type:     schema.TypeString,
@@ -336,7 +342,7 @@ func resourceAwsInstance() *schema.Resource {
 func resourceAwsInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	instanceOpts, err := buildAwsInstanceOpts(d, meta)
+    instanceOpts, err := buildAwsInstanceOpts(d, meta)
 	if err != nil {
 		return err
 	}
@@ -412,7 +418,7 @@ func resourceAwsInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 		Pending:    []string{"pending"},
 		Target:     []string{"running"},
 		Refresh:    InstanceStateRefreshFunc(conn, *instance.InstanceId),
-		Timeout:    10 * time.Minute,
+		Timeout:    d.Timeout(schema.TimeoutCreate),
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
@@ -634,7 +640,7 @@ func resourceAwsInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceAwsInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-	if err := awsTerminateInstance(conn, d.Id()); err != nil {
+	if err := awsTerminateInstance(conn, d); err != nil {
 		return err
 	}
 
@@ -1135,22 +1141,22 @@ func buildAwsInstanceOpts(
 	return opts, nil
 }
 
-func awsTerminateInstance(conn *ec2.EC2, id string) error {
-	log.Printf("[INFO] Terminating instance: %s", id)
+func awsTerminateInstance(conn *ec2.EC2, d *schema.ResourceData) error {
+	log.Printf("[INFO] Terminating instance: %s", d.Id())
 	req := &ec2.TerminateInstancesInput{
-		InstanceIds: []*string{aws.String(id)},
+		InstanceIds: []*string{aws.String(d.Id())},
 	}
 	if _, err := conn.TerminateInstances(req); err != nil {
 		return fmt.Errorf("Error terminating instance: %s", err)
 	}
 
-	log.Printf("[DEBUG] Waiting for instance (%s) to become terminated", id)
+	log.Printf("[DEBUG] Waiting for instance (%s) to become terminated", d.Id())
 
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"pending", "running", "shutting-down", "stopped", "stopping"},
 		Target:     []string{"terminated"},
-		Refresh:    InstanceStateRefreshFunc(conn, id),
-		Timeout:    10 * time.Minute,
+		Refresh:    InstanceStateRefreshFunc(conn, d.Id()),
+		Timeout:    d.Timeout(schema.TimeoutDelete),
 		Delay:      10 * time.Second,
 		MinTimeout: 3 * time.Second,
 	}
@@ -1158,7 +1164,7 @@ func awsTerminateInstance(conn *ec2.EC2, id string) error {
 	_, err := stateConf.WaitForState()
 	if err != nil {
 		return fmt.Errorf(
-			"Error waiting for instance (%s) to terminate: %s", id, err)
+			"Error waiting for instance (%s) to terminate: %s", d.Id(), err)
 	}
 
 	return nil
