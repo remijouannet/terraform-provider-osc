@@ -13,7 +13,7 @@ Install
 Download the binary and put it in the same folder than terraform binary
 
 ```
-$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.5/terraform-provider-osc_darwin_amd64_v0.6.zip
+$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.6/terraform-provider-osc_darwin_amd64_v0.6.zip
 $ unzip terraform-provider-osc_darwin_amd64_v0.6.zip
 $ mkdir -p ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.6/terraform-provider-osc_v0.6 ~/.terraform.d/plugins/
 $ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.6
