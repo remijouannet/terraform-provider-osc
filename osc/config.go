@@ -44,27 +44,27 @@ type Config struct {
 	AllowedAccountIds   []interface{}
 	ForbiddenAccountIds []interface{}
 
-	Ec2Endpoint      string
-	IamEndpoint      string
-	ElbEndpoint      string
-	S3Endpoint       string
-	Insecure         bool
+	Ec2Endpoint string
+	IamEndpoint string
+	ElbEndpoint string
+	S3Endpoint  string
+	Insecure    bool
 
-	SkipRegionValidation    bool
-	SkipMetadataApiCheck    bool
-	S3ForcePathStyle        bool
+	SkipRegionValidation bool
+	SkipMetadataApiCheck bool
+	S3ForcePathStyle     bool
 }
 
 type AWSClient struct {
-	ec2conn               *ec2.EC2
-	elbconn               *elb.ELB
-	elbv2conn             *elbv2.ELBV2
-	apigateway            *apigateway.APIGateway
-	s3conn                *s3.S3
-	partition             string
-	accountid             string
-	region                string
-	iamconn               *iam.IAM
+	ec2conn    *ec2.EC2
+	elbconn    *elb.ELB
+	elbv2conn  *elbv2.ELBV2
+	apigateway *apigateway.APIGateway
+	s3conn     *s3.S3
+	partition  string
+	accountid  string
+	region     string
+	iamconn    *iam.IAM
 }
 
 // Client configures and returns a fully initialized AWSClient
@@ -150,11 +150,11 @@ func (c *Config) Client() (interface{}, error) {
 	// These two services need to be set up early so we can check on AccountID
 	client.iamconn = iam.New(awsIamSess)
 
-    partition, accountId, err := GetAccountInfo(client.iamconn, nil, cp.ProviderName)
-    if err == nil {
-        client.partition = partition
-        client.accountid = accountId
-    }
+	partition, accountId, err := GetAccountInfo(client.iamconn, nil, cp.ProviderName)
+	if err == nil {
+		client.partition = partition
+		client.accountid = accountId
+	}
 
 	authErr := c.ValidateAccountId(client.accountid)
 	if authErr != nil {
@@ -198,7 +198,6 @@ func (c *Config) ValidateRegion() error {
 	}
 	return fmt.Errorf("Not a valid region: %s", c.Region)
 }
-
 
 // ValidateAccountId returns a context-specific error if the configured account
 // id is explicitly forbidden or not authorised; and nil if it is authorised.

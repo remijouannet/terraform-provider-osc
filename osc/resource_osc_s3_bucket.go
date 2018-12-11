@@ -1455,7 +1455,7 @@ func resourceAwsS3BucketReplicationConfigurationUpdate(s3conn *s3.S3, d *schema.
 
 	rc.Rules = rules
 	i := &s3.PutBucketReplicationInput{
-		Bucket: aws.String(bucket),
+		Bucket:                   aws.String(bucket),
 		ReplicationConfiguration: rc,
 	}
 	log.Printf("[DEBUG] S3 put bucket replication configuration: %#v", i)

@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/posener/complete"
+
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/config"
@@ -33,6 +35,7 @@ type InitCommand struct {
 }
 
 func (c *InitCommand) Run(args []string) int {
+	var flagFromModule string
 	var flagBackend, flagGet, flagUpgrade bool
 	var flagConfigExtra map[string]interface{}
 	var flagPluginPath FlagStringSlice
@@ -45,6 +48,7 @@ func (c *InitCommand) Run(args []string) int {
 	cmdFlags := c.flagSet("init")
 	cmdFlags.BoolVar(&flagBackend, "backend", true, "")
 	cmdFlags.Var((*variables.FlagAny)(&flagConfigExtra), "backend-config", "")
+	cmdFlags.StringVar(&flagFromModule, "from-module", "", "copy the source of the given module into the directory before init")
 	cmdFlags.BoolVar(&flagGet, "get", true, "")
 	cmdFlags.BoolVar(&c.getPlugins, "get-plugins", true, "")
 	cmdFlags.BoolVar(&c.forceInitCopy, "force-copy", false, "suppress prompts about copying state data")
@@ -65,12 +69,14 @@ func (c *InitCommand) Run(args []string) int {
 		c.getPlugins = false
 	}
 
-	// set getProvider if we don't have a test version already
+	// set providerInstaller if we don't have a test version already
 	if c.providerInstaller == nil {
 		c.providerInstaller = &discovery.ProviderInstaller{
-			Dir: c.pluginDir(),
+			Dir:                   c.pluginDir(),
+			Cache:                 c.pluginCache(),
 			PluginProtocolVersion: plugin.Handshake.ProtocolVersion,
 			SkipVerify:            !flagVerifyPlugins,
+			Ui:                    c.Ui,
 		}
 	}
 
@@ -95,7 +101,7 @@ func (c *InitCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Get the path and source module to copy
+	// If an argument is provided then it overrides our working directory.
 	path := pwd
 	if len(args) == 1 {
 		path = args[0]
@@ -105,13 +111,39 @@ func (c *InitCommand) Run(args []string) int {
 	// to output a newline before the success message
 	var header bool
 
+	if flagFromModule != "" {
+		src := flagFromModule
+
+		empty, err := config.IsEmptyDir(path)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error validating destination directory: %s", err))
+			return 1
+		}
+		if !empty {
+			c.Ui.Error(strings.TrimSpace(errInitCopyNotEmpty))
+			return 1
+		}
+
+		c.Ui.Output(c.Colorize().Color(fmt.Sprintf(
+			"[reset][bold]Copying configuration[reset] from %q...", src,
+		)))
+		header = true
+
+		s := module.NewStorage("", c.Services)
+		if err := s.GetModule(path, src); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error copying source module: %s", err))
+			return 1
+		}
+	}
+
 	// If our directory is empty, then we're done. We can't get or setup
 	// the backend with an empty directory.
-	if empty, err := config.IsEmptyDir(path); err != nil {
-		c.Ui.Error(fmt.Sprintf(
-			"Error checking configuration: %s", err))
+	empty, err := config.IsEmptyDir(path)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error checking configuration: %s", err))
 		return 1
-	} else if empty {
+	}
+	if empty {
 		c.Ui.Output(c.Colorize().Color(strings.TrimSpace(outputInitEmpty)))
 		return 0
 	}
@@ -123,8 +155,10 @@ func (c *InitCommand) Run(args []string) int {
 	if flagGet || flagBackend {
 		conf, err := c.Config(path)
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf(
-				"Error loading configuration: %s", err))
+			// Since this may be the user's first ever interaction with Terraform,
+			// we'll provide some additional context in this case.
+			c.Ui.Error(strings.TrimSpace(errInitConfigError))
+			c.showDiagnostics(err)
 			return 1
 		}
 
@@ -139,7 +173,7 @@ func (c *InitCommand) Run(args []string) int {
 					"[reset][bold]Upgrading modules...")))
 			} else {
 				c.Ui.Output(c.Colorize().Color(fmt.Sprintf(
-					"[reset][bold]Downloading modules...")))
+					"[reset][bold]Initializing modules...")))
 			}
 
 			if err := getModules(&c.Meta, path, getMode); err != nil {
@@ -147,7 +181,6 @@ func (c *InitCommand) Run(args []string) int {
 					"Error downloading modules: %s", err))
 				return 1
 			}
-
 		}
 
 		// If we're requesting backend configuration or looking for required
@@ -195,14 +228,12 @@ func (c *InitCommand) Run(args []string) int {
 	if back != nil {
 		sMgr, err := back.State(c.Workspace())
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf(
-				"Error loading state: %s", err))
+			c.Ui.Error(fmt.Sprintf("Error loading state: %s", err))
 			return 1
 		}
 
 		if err := sMgr.RefreshState(); err != nil {
-			c.Ui.Error(fmt.Sprintf(
-				"Error refreshing state: %s", err))
+			c.Ui.Error(fmt.Sprintf("Error refreshing state: %s", err))
 			return 1
 		}
 
@@ -228,6 +259,12 @@ func (c *InitCommand) Run(args []string) int {
 	}
 
 	c.Ui.Output(c.Colorize().Color(strings.TrimSpace(outputInitSuccess)))
+	if !c.RunningInAutomation {
+		// If we're not running in an automation wrapper, give the user
+		// some more detailed next steps that are appropriate for interactive
+		// shell usage.
+		c.Ui.Output(c.Colorize().Color(strings.TrimSpace(outputInitSuccessCLI)))
+	}
 
 	return 0
 }
@@ -235,14 +272,21 @@ func (c *InitCommand) Run(args []string) int {
 // Load the complete module tree, and fetch any missing providers.
 // This method outputs its own Ui.
 func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade bool) error {
-	mod, err := c.Module(path)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error getting plugins: %s", err))
+	mod, diags := c.Module(path)
+	if diags.HasErrors() {
+		c.showDiagnostics(diags)
+		return diags.Err()
+	}
+
+	if err := terraform.CheckStateVersion(state); err != nil {
+		diags = diags.Append(err)
+		c.showDiagnostics(diags)
 		return err
 	}
 
-	if err := mod.Validate(); err != nil {
-		c.Ui.Error(fmt.Sprintf("Error getting plugins: %s", err))
+	if err := terraform.CheckRequiredVersion(mod); err != nil {
+		diags = diags.Append(err)
+		c.showDiagnostics(diags)
 		return err
 	}
 
@@ -269,8 +313,12 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 
 	var errs error
 	if c.getPlugins {
+		if len(missing) > 0 {
+			c.Ui.Output(fmt.Sprintf("- Checking for available provider plugins on %s...",
+				discovery.GetReleaseHost()))
+		}
+
 		for provider, reqd := range missing {
-			c.Ui.Output(fmt.Sprintf("- Downloading plugin for provider %q...", provider))
 			_, err := c.providerInstaller.Get(provider, reqd.Versions)
 
 			if err != nil {
@@ -328,7 +376,10 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 	// again. If anything changes, other commands that use providers will
 	// fail with an error instructing the user to re-run this command.
 	available = c.providerPluginSet() // re-discover to see newly-installed plugins
-	chosen := choosePlugins(available, requirements)
+
+	// internal providers were already filtered out, since we don't need to get them.
+	chosen := choosePlugins(available, nil, requirements)
+
 	digests := map[string][]byte{}
 	for name, meta := range chosen {
 		digest, err := meta.SHA256()
@@ -341,7 +392,7 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 			digests[name] = nil
 		}
 	}
-	err = c.providerPluginsLock().Write(digests)
+	err := c.providerPluginsLock().Write(digests)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("failed to save provider manifest: %s", err))
 		return err
@@ -395,6 +446,29 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 	return nil
 }
 
+func (c *InitCommand) AutocompleteArgs() complete.Predictor {
+	return complete.PredictDirs("")
+}
+
+func (c *InitCommand) AutocompleteFlags() complete.Flags {
+	return complete.Flags{
+		"-backend":        completePredictBoolean,
+		"-backend-config": complete.PredictFiles("*.tfvars"), // can also be key=value, but we can't "predict" that
+		"-force-copy":     complete.PredictNothing,
+		"-from-module":    completePredictModuleSource,
+		"-get":            completePredictBoolean,
+		"-get-plugins":    completePredictBoolean,
+		"-input":          completePredictBoolean,
+		"-lock":           completePredictBoolean,
+		"-lock-timeout":   complete.PredictAnything,
+		"-no-color":       complete.PredictNothing,
+		"-plugin-dir":     complete.PredictDirs(""),
+		"-reconfigure":    complete.PredictNothing,
+		"-upgrade":        completePredictBoolean,
+		"-verify-plugins": completePredictBoolean,
+	}
+}
+
 func (c *InitCommand) Help() string {
 	helpText := `
 Usage: terraform init [options] [DIR]
@@ -430,6 +504,9 @@ Options:
                        equivalent to providing a "yes" to all confirmation
                        prompts.
 
+  -from-module=SOURCE  Copy the contents of the given module into the target
+                       directory before initialization.
+
   -get=true            Download any modules for this configuration.
 
   -get-plugins=true    Download any missing plugins for this configuration.
@@ -462,15 +539,22 @@ Options:
 }
 
 func (c *InitCommand) Synopsis() string {
-	return "Initialize a new or existing Terraform configuration"
+	return "Initialize a Terraform working directory"
 }
 
-const errInitCopyNotEmpty = `
-The destination path contains Terraform configuration files. The init command
-with a SOURCE parameter can only be used on a directory without existing
-Terraform files.
+const errInitConfigError = `
+There are some problems with the configuration, described below.
 
-Please resolve this issue and try again.
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+`
+
+const errInitCopyNotEmpty = `
+The working directory already contains files. The -from-module option requires
+an empty directory into which a copy of the referenced module will be placed.
+
+To initialize the configuration already in this working directory, omit the
+-from-module option.
 `
 
 const outputInitEmpty = `
@@ -482,7 +566,9 @@ with Terraform immediately by creating Terraform configuration files.
 
 const outputInitSuccess = `
 [reset][bold][green]Terraform has been successfully initialized![reset][green]
+`
 
+const outputInitSuccessCLI = `[reset][green]
 You may now begin working with Terraform. Try running "terraform plan" to see
 any changes that are required for your infrastructure. All Terraform commands
 should now work.

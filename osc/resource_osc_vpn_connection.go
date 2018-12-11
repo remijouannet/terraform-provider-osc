@@ -436,13 +436,13 @@ func xmlConfigToTunnelInfo(xmlConfig string) (*TunnelInfo, error) {
 	tunnelInfo := TunnelInfo{
 		Tunnel1Address:      vpnConfig.Tunnels[0].OutsideAddress,
 		Tunnel1PreSharedKey: vpnConfig.Tunnels[0].PreSharedKey,
-    }
-    if len(vpnConfig.Tunnels)== 2 {
+	}
+	if len(vpnConfig.Tunnels) == 2 {
 		tunnelInfo.Tunnel2Address = vpnConfig.Tunnels[1].OutsideAddress
 		tunnelInfo.Tunnel2PreSharedKey = vpnConfig.Tunnels[1].PreSharedKey
-    } else {
-        tunnelInfo.Tunnel2Address = ""
+	} else {
+		tunnelInfo.Tunnel2Address = ""
 		tunnelInfo.Tunnel2PreSharedKey = ""
-    }
+	}
 	return &tunnelInfo, nil
 }

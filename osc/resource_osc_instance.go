@@ -32,11 +32,11 @@ func resourceAwsInstance() *schema.Resource {
 		SchemaVersion: 1,
 		MigrateState:  resourceAwsInstanceMigrateState,
 
-        Timeouts: &schema.ResourceTimeout{
-            Create: schema.DefaultTimeout(10 * time.Minute),
-            Update: schema.DefaultTimeout(10 * time.Minute),
-            Delete: schema.DefaultTimeout(20 * time.Minute),
-        },
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(10 * time.Minute),
+			Update: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(20 * time.Minute),
+		},
 
 		Schema: map[string]*schema.Schema{
 			"ami": {
@@ -342,19 +342,19 @@ func resourceAwsInstance() *schema.Resource {
 func resourceAwsInstanceCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
 
-    instanceOpts, err := buildAwsInstanceOpts(d, meta)
+	instanceOpts, err := buildAwsInstanceOpts(d, meta)
 	if err != nil {
 		return err
 	}
 
 	// Build the creation struct
 	runOpts := &ec2.RunInstancesInput{
-		BlockDeviceMappings:   instanceOpts.BlockDeviceMappings,
-		DisableApiTermination: instanceOpts.DisableAPITermination,
-		EbsOptimized:          instanceOpts.EBSOptimized,
-		Monitoring:            instanceOpts.Monitoring,
-		IamInstanceProfile:    instanceOpts.IAMInstanceProfile,
-		ImageId:               instanceOpts.ImageID,
+		BlockDeviceMappings:               instanceOpts.BlockDeviceMappings,
+		DisableApiTermination:             instanceOpts.DisableAPITermination,
+		EbsOptimized:                      instanceOpts.EBSOptimized,
+		Monitoring:                        instanceOpts.Monitoring,
+		IamInstanceProfile:                instanceOpts.IAMInstanceProfile,
+		ImageId:                           instanceOpts.ImageID,
 		InstanceInitiatedShutdownBehavior: instanceOpts.InstanceInitiatedShutdownBehavior,
 		InstanceType:                      instanceOpts.InstanceType,
 		KeyName:                           instanceOpts.KeyName,

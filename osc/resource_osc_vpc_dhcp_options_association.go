@@ -1,8 +1,8 @@
 package osc
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -87,31 +87,31 @@ func resourceAwsVpcDhcpOptionsAssociationUpdate(d *schema.ResourceData, meta int
 // So, we do this by setting the VPC to the default DHCP Options Set.
 func resourceAwsVpcDhcpOptionsAssociationDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).ec2conn
-    default_id := "default"
+	default_id := "default"
 
-    req := &ec2.DescribeDhcpOptionsInput{}
-    resp, err := conn.DescribeDhcpOptions(req)
+	req := &ec2.DescribeDhcpOptionsInput{}
+	resp, err := conn.DescribeDhcpOptions(req)
 
 	if err != nil {
 		return fmt.Errorf("Error retrieving DHCP Options: %s", err)
 	}
 
-    for _, num := range resp.DhcpOptions {
-        for _, cfg := range num.DhcpConfigurations {
-            if *cfg.Key == "domain-name" && strings.Contains(*cfg.Values[0].Value, ".compute.internal") {
-                default_id = *num.DhcpOptionsId
-            } else if *cfg.Key == "domain-name-servers" && *cfg.Values[0].Value == "OutscaleProvidedDNS" {
-                default_id = *num.DhcpOptionsId
-            } else if *cfg.Key == "ntp-servers" && *cfg.Values[0].Value == "" {
-                default_id = *num.DhcpOptionsId
-            } else {
-                default_id = "default"
-            }
-        }
-        if default_id != "default" {
-            break
-        }
-    }
+	for _, num := range resp.DhcpOptions {
+		for _, cfg := range num.DhcpConfigurations {
+			if *cfg.Key == "domain-name" && strings.Contains(*cfg.Values[0].Value, ".compute.internal") {
+				default_id = *num.DhcpOptionsId
+			} else if *cfg.Key == "domain-name-servers" && *cfg.Values[0].Value == "OutscaleProvidedDNS" {
+				default_id = *num.DhcpOptionsId
+			} else if *cfg.Key == "ntp-servers" && *cfg.Values[0].Value == "" {
+				default_id = *num.DhcpOptionsId
+			} else {
+				default_id = "default"
+			}
+		}
+		if default_id != "default" {
+			break
+		}
+	}
 
 	log.Printf("[INFO] Disassociating DHCP Options Set %s from VPC %s...", d.Get("dhcp_options_id"), d.Get("vpc_id"))
 

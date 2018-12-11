@@ -524,11 +524,11 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("access_logs") {
-        logs := d.Get("access_logs").([]interface{})
+		logs := d.Get("access_logs").([]interface{})
 		if len(logs) == 1 {
-            attrs := elb.ModifyLoadBalancerAttributesInput{
-                LoadBalancerName: aws.String(d.Get("name").(string)),
-            }
+			attrs := elb.ModifyLoadBalancerAttributesInput{
+				LoadBalancerName: aws.String(d.Get("name").(string)),
+			}
 			l := logs[0].(map[string]interface{})
 			accessLog := &elb.AccessLog{
 				Enabled:      aws.Bool(l["enabled"].(bool)),
@@ -541,18 +541,18 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 
 			attrs.LoadBalancerAttributes.AccessLog = accessLog
-            log.Printf("[DEBUG] ELB Modify Load Balancer Attributes Request: %#v", attrs)
-            _, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
-            if err != nil {
-                return fmt.Errorf("Failure configuring ELB attributes: %s", err)
-            }
+			log.Printf("[DEBUG] ELB Modify Load Balancer Attributes Request: %#v", attrs)
+			_, err := elbconn.ModifyLoadBalancerAttributes(&attrs)
+			if err != nil {
+				return fmt.Errorf("Failure configuring ELB attributes: %s", err)
+			}
 		} else if len(logs) == 0 {
 			// disable access logs
 			//attrs.LoadBalancerAttributes.AccessLog = &elb.AccessLog{
 			//	Enabled: aws.Bool(false),
 			//}
 		}
-    }
+	}
 
 	if d.HasChange("health_check") {
 		hc := d.Get("health_check").([]interface{})
@@ -578,17 +578,17 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	//if d.HasChange("security_groups") {
 	//	groups := d.Get("security_groups").(*schema.Set).List()
-    //
+	//
 	//	applySecurityGroupsOpts := elb.ApplySecurityGroupsToLoadBalancerInput{
 	//		LoadBalancerName: aws.String(d.Id()),
 	//		SecurityGroups:   expandStringList(groups),
 	//	}
-    //
+	//
 	//	_, err := elbconn.ApplySecurityGroupsToLoadBalancer(&applySecurityGroupsOpts)
 	//	if err != nil {
 	//		return fmt.Errorf("Failure applying security groups to ELB: %s", err)
 	//	}
-    //
+	//
 	//	d.SetPartial("security_groups")
 	//}
 
@@ -596,36 +596,36 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 	//	o, n := d.GetChange("availability_zones")
 	//	os := o.(*schema.Set)
 	//	ns := n.(*schema.Set)
-    //
+	//
 	//	removed := expandStringList(os.Difference(ns).List())
 	//	added := expandStringList(ns.Difference(os).List())
-    //
+	//
 	//	if len(added) > 0 {
 	//		enableOpts := &elb.EnableAvailabilityZonesForLoadBalancerInput{
 	//			LoadBalancerName:  aws.String(d.Id()),
 	//			AvailabilityZones: added,
 	//		}
-    //
+	//
 	//		log.Printf("[DEBUG] ELB enable availability zones opts: %s", enableOpts)
 	//		_, err := elbconn.EnableAvailabilityZonesForLoadBalancer(enableOpts)
 	//		if err != nil {
 	//			return fmt.Errorf("Failure enabling ELB availability zones: %s", err)
 	//		}
 	//	}
-    //
+	//
 	//	if len(removed) > 0 {
 	//		disableOpts := &elb.DisableAvailabilityZonesForLoadBalancerInput{
 	//			LoadBalancerName:  aws.String(d.Id()),
 	//			AvailabilityZones: removed,
 	//		}
-    //
+	//
 	//		log.Printf("[DEBUG] ELB disable availability zones opts: %s", disableOpts)
 	//		_, err := elbconn.DisableAvailabilityZonesForLoadBalancer(disableOpts)
 	//		if err != nil {
 	//			return fmt.Errorf("Failure disabling ELB availability zones: %s", err)
 	//		}
 	//	}
-    //
+	//
 	//	d.SetPartial("availability_zones")
 	//}
 
@@ -633,29 +633,29 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 	//	o, n := d.GetChange("subnets")
 	//	os := o.(*schema.Set)
 	//	ns := n.(*schema.Set)
-//
+	//
 	//	removed := expandStringList(os.Difference(ns).List())
 	//	added := expandStringList(ns.Difference(os).List())
-//
+	//
 	//	if len(removed) > 0 {
 	//		detachOpts := &elb.DetachLoadBalancerFromSubnetsInput{
 	//			LoadBalancerName: aws.String(d.Id()),
 	//			Subnets:          removed,
 	//		}
-//
+	//
 	//		log.Printf("[DEBUG] ELB detach subnets opts: %s", detachOpts)
 	//		_, err := elbconn.DetachLoadBalancerFromSubnets(detachOpts)
 	//		if err != nil {
 	//			return fmt.Errorf("Failure removing ELB subnets: %s", err)
 	//		}
 	//	}
-//
+	//
 	//	if len(added) > 0 {
 	//		attachOpts := &elb.AttachLoadBalancerToSubnetsInput{
 	//			LoadBalancerName: aws.String(d.Id()),
 	//			Subnets:          added,
 	//		}
-//
+	//
 	//		log.Printf("[DEBUG] ELB attach subnets opts: %s", attachOpts)
 	//		err := resource.Retry(1*time.Minute, func() *resource.RetryError {
 	//			_, err := elbconn.AttachLoadBalancerToSubnets(attachOpts)
@@ -676,7 +676,7 @@ func resourceAwsElbUpdate(d *schema.ResourceData, meta interface{}) error {
 	//			return fmt.Errorf("Failure adding ELB subnets: %s", err)
 	//		}
 	//	}
-//
+	//
 	//	d.SetPartial("subnets")
 	//}
 
