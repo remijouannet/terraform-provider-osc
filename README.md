@@ -4,8 +4,8 @@ Terraform Provider for Outscale (unofficial)
 Requirements
 ------------
 
--   [Terraform](https://www.terraform.io/downloads.html) 0.10.7 
--   [Go](https://golang.org/doc/install) 1.11 (to build the provider plugin)
+-   [Terraform](https://www.terraform.io/downloads.html) 0.11.11 
+-   [Go](https://golang.org/doc/install) 1.11.5 (to build the provider plugin)
 
 Install
 ---------------------
@@ -13,10 +13,10 @@ Install
 Download the binary and put it in the same folder than terraform binary
 
 ```
-$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.6/terraform-provider-osc_darwin_amd64_v0.6.zip
-$ unzip terraform-provider-osc_darwin_amd64_v0.6.zip
-$ mkdir -p ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.6/terraform-provider-osc_v0.6 ~/.terraform.d/plugins/
-$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.6
+$ wget https://github.com/remijouannet/terraform-provider-osc/releases/download/v0.7/terraform-provider-osc_darwin_amd64_v0.7.zip
+$ unzip terraform-provider-osc_darwin_amd64_v0.7.zip
+$ mkdir -p ~/.terraform.d/plugins/ && mv terraform-provider-osc_darwin_amd64_v0.7/terraform-provider-osc_v0.7 ~/.terraform.d/plugins/
+$ chmod +x ~/.terraform.d/plugins/terraform-provider-osc_v0.7
 ```
 
 Build without docker
