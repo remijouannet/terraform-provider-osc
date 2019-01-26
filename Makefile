@@ -55,9 +55,6 @@ vet:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
-vendor-status:
-	@govendor status
-
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
 		echo "ERROR: Set TEST to a specific package. For example,"; \
