@@ -52,7 +52,7 @@ func resourceAwsNetworkInterface() *schema.Resource {
 			"source_dest_check": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
+				Default:  false,
 			},
 
 			"description": &schema.Schema{
@@ -288,17 +288,20 @@ func resourceAwsNetworkInterfaceUpdate(d *schema.ResourceData, meta interface{})
 		d.SetPartial("private_ips")
 	}
 
-	request := &ec2.ModifyNetworkInterfaceAttributeInput{
-		NetworkInterfaceId: aws.String(d.Id()),
-		SourceDestCheck:    &ec2.AttributeBooleanValue{Value: aws.Bool(d.Get("source_dest_check").(bool))},
-	}
+	if d.Get("source_dest_check").(bool) {
+		request := &ec2.ModifyNetworkInterfaceAttributeInput{
+			NetworkInterfaceId: aws.String(d.Id()),
+			SourceDestCheck:    &ec2.AttributeBooleanValue{Value: aws.Bool(d.Get("source_dest_check").(bool))},
+		}
 
-	_, err := conn.ModifyNetworkInterfaceAttribute(request)
-	if err != nil {
-		return fmt.Errorf("Failure updating ENI: %s", err)
-	}
+		_, err := conn.ModifyNetworkInterfaceAttribute(request)
 
-	d.SetPartial("source_dest_check")
+		if err != nil {
+			return fmt.Errorf("Failure updating ENI: %s", err)
+		}
+
+		d.SetPartial("source_dest_check")
+	}
 
 	if d.HasChange("security_groups") {
 		request := &ec2.ModifyNetworkInterfaceAttributeInput{
