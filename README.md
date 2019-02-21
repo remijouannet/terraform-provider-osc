@@ -1,3 +1,4 @@
+[![Github All Releases](https://img.shields.io/github/downloads/remijouannet/terraform-provider-osc/total.svg)]()
 Terraform Provider for Outscale (unofficial)
 ==================
 
