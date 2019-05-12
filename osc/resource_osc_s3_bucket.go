@@ -321,65 +321,6 @@ func resourceAwsS3Bucket() *schema.Resource {
 				ValidateFunc: validateS3BucketRequestPayerType,
 			},
 
-			"replication_configuration": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"role": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"rules": {
-							Type:     schema.TypeSet,
-							Required: true,
-							Set:      rulesHash,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"id": {
-										Type:         schema.TypeString,
-										Optional:     true,
-										ValidateFunc: validateS3BucketReplicationRuleId,
-									},
-									"destination": {
-										Type:     schema.TypeSet,
-										MaxItems: 1,
-										MinItems: 1,
-										Required: true,
-										Set:      destinationHash,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"bucket": {
-													Type:         schema.TypeString,
-													Required:     true,
-													ValidateFunc: validateArn,
-												},
-												"storage_class": {
-													Type:         schema.TypeString,
-													Optional:     true,
-													ValidateFunc: validateS3BucketReplicationDestinationStorageClass,
-												},
-											},
-										},
-									},
-									"prefix": {
-										Type:         schema.TypeString,
-										Required:     true,
-										ValidateFunc: validateS3BucketReplicationRulePrefix,
-									},
-									"status": {
-										Type:         schema.TypeString,
-										Required:     true,
-										ValidateFunc: validateS3BucketReplicationRuleStatus,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-
 			"tags": tagsSchema(),
 		},
 	}
@@ -506,12 +447,6 @@ func resourceAwsS3BucketUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if d.HasChange("replication_configuration") {
-		if err := resourceAwsS3BucketReplicationConfigurationUpdate(s3conn, d); err != nil {
-			return err
-		}
-	}
-
 	return resourceAwsS3BucketRead(d, meta)
 }
 
@@ -564,92 +499,6 @@ func resourceAwsS3BucketRead(d *schema.ResourceData, meta interface{}) error {
 				d.Set("policy", policy)
 			}
 		}
-	}
-
-	// Read the CORS
-	cors, err := s3conn.GetBucketCors(&s3.GetBucketCorsInput{
-		Bucket: aws.String(d.Id()),
-	})
-	if err != nil {
-		// An S3 Bucket might not have CORS configuration set.
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() != "NoSuchCORSConfiguration" {
-			return err
-		}
-		log.Printf("[WARN] S3 bucket: %s, no CORS configuration could be found.", d.Id())
-	}
-	log.Printf("[DEBUG] S3 bucket: %s, read CORS: %v", d.Id(), cors)
-	if cors.CORSRules != nil {
-		rules := make([]map[string]interface{}, 0, len(cors.CORSRules))
-		for _, ruleObject := range cors.CORSRules {
-			rule := make(map[string]interface{})
-			rule["allowed_headers"] = flattenStringList(ruleObject.AllowedHeaders)
-			rule["allowed_methods"] = flattenStringList(ruleObject.AllowedMethods)
-			rule["allowed_origins"] = flattenStringList(ruleObject.AllowedOrigins)
-			// Both the "ExposeHeaders" and "MaxAgeSeconds" might not be set.
-			if ruleObject.AllowedOrigins != nil {
-				rule["expose_headers"] = flattenStringList(ruleObject.ExposeHeaders)
-			}
-			if ruleObject.MaxAgeSeconds != nil {
-				rule["max_age_seconds"] = int(*ruleObject.MaxAgeSeconds)
-			}
-			rules = append(rules, rule)
-		}
-		if err := d.Set("cors_rule", rules); err != nil {
-			return err
-		}
-	}
-
-	// Read the website configuration
-	ws, err := s3conn.GetBucketWebsite(&s3.GetBucketWebsiteInput{
-		Bucket: aws.String(d.Id()),
-	})
-	var websites []map[string]interface{}
-	if err == nil {
-		w := make(map[string]interface{})
-
-		if v := ws.IndexDocument; v != nil {
-			w["index_document"] = *v.Suffix
-		}
-
-		if v := ws.ErrorDocument; v != nil {
-			w["error_document"] = *v.Key
-		}
-
-		if v := ws.RedirectAllRequestsTo; v != nil {
-			if v.Protocol == nil {
-				w["redirect_all_requests_to"] = *v.HostName
-			} else {
-				var host string
-				var path string
-				parsedHostName, err := url.Parse(*v.HostName)
-				if err == nil {
-					host = parsedHostName.Host
-					path = parsedHostName.Path
-				} else {
-					host = *v.HostName
-					path = ""
-				}
-
-				w["redirect_all_requests_to"] = (&url.URL{
-					Host:   host,
-					Path:   path,
-					Scheme: *v.Protocol,
-				}).String()
-			}
-		}
-
-		if v := ws.RoutingRules; v != nil {
-			rr, err := normalizeRoutingRules(v)
-			if err != nil {
-				return fmt.Errorf("Error while marshaling routing rules: %s", err)
-			}
-			w["routing_rules"] = rr
-		}
-
-		websites = append(websites, w)
-	}
-	if err := d.Set("website", websites); err != nil {
-		return err
 	}
 
 	// Read the versioning configuration
@@ -843,24 +692,6 @@ func resourceAwsS3BucketRead(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		if err := d.Set("lifecycle_rule", rules); err != nil {
-			return err
-		}
-	}
-
-	// Read the bucket replication configuration
-	replication, err := s3conn.GetBucketReplication(&s3.GetBucketReplicationInput{
-		Bucket: aws.String(d.Id()),
-	})
-	if err != nil {
-		if awsError, ok := err.(awserr.RequestFailure); ok && awsError.StatusCode() != 404 {
-			return err
-		}
-	}
-
-	log.Printf("[DEBUG] S3 Bucket: %s, read replication configuration: %v", d.Id(), replication)
-	if r := replication.ReplicationConfiguration; r != nil {
-		if err := d.Set("replication_configuration", flattenAwsS3BucketReplicationConfiguration(replication.ReplicationConfiguration)); err != nil {
-			log.Printf("[DEBUG] Error setting replication configuration: %s", err)
 			return err
 		}
 	}
@@ -1383,91 +1214,6 @@ func resourceAwsS3BucketRequestPayerUpdate(s3conn *s3.S3, d *schema.ResourceData
 	return nil
 }
 
-func resourceAwsS3BucketReplicationConfigurationUpdate(s3conn *s3.S3, d *schema.ResourceData) error {
-	bucket := d.Get("bucket").(string)
-	replicationConfiguration := d.Get("replication_configuration").([]interface{})
-
-	if len(replicationConfiguration) == 0 {
-		i := &s3.DeleteBucketReplicationInput{
-			Bucket: aws.String(bucket),
-		}
-
-		err := resource.Retry(1*time.Minute, func() *resource.RetryError {
-			if _, err := s3conn.DeleteBucketReplication(i); err != nil {
-				return resource.NonRetryableError(err)
-			}
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("Error removing S3 bucket replication: %s", err)
-		}
-		return nil
-	}
-
-	hasVersioning := false
-	// Validate that bucket versioning is enabled
-	if versioning, ok := d.GetOk("versioning"); ok {
-		v := versioning.([]interface{})
-
-		if v[0].(map[string]interface{})["enabled"].(bool) {
-			hasVersioning = true
-		}
-	}
-
-	if !hasVersioning {
-		return fmt.Errorf("versioning must be enabled to allow S3 bucket replication")
-	}
-
-	c := replicationConfiguration[0].(map[string]interface{})
-
-	rc := &s3.ReplicationConfiguration{}
-	if val, ok := c["role"]; ok {
-		rc.Role = aws.String(val.(string))
-	}
-
-	rcRules := c["rules"].(*schema.Set).List()
-	rules := []*s3.ReplicationRule{}
-	for _, v := range rcRules {
-		rr := v.(map[string]interface{})
-		rcRule := &s3.ReplicationRule{
-			Prefix: aws.String(rr["prefix"].(string)),
-			Status: aws.String(rr["status"].(string)),
-		}
-
-		if rrid, ok := rr["id"]; ok {
-			rcRule.ID = aws.String(rrid.(string))
-		}
-
-		ruleDestination := &s3.Destination{}
-		if destination, ok := rr["destination"]; ok {
-			dest := destination.(*schema.Set).List()
-
-			bd := dest[0].(map[string]interface{})
-			ruleDestination.Bucket = aws.String(bd["bucket"].(string))
-
-			if storageClass, ok := bd["storage_class"]; ok && storageClass != "" {
-				ruleDestination.StorageClass = aws.String(storageClass.(string))
-			}
-		}
-		rcRule.Destination = ruleDestination
-		rules = append(rules, rcRule)
-	}
-
-	rc.Rules = rules
-	i := &s3.PutBucketReplicationInput{
-		Bucket:                   aws.String(bucket),
-		ReplicationConfiguration: rc,
-	}
-	log.Printf("[DEBUG] S3 put bucket replication configuration: %#v", i)
-
-	_, err := s3conn.PutBucketReplication(i)
-	if err != nil {
-		return fmt.Errorf("Error putting S3 replication configuration: %s", err)
-	}
-
-	return nil
-}
-
 func resourceAwsS3BucketLifecycleUpdate(s3conn *s3.S3, d *schema.ResourceData) error {
 	bucket := d.Get("bucket").(string)
 
@@ -1614,46 +1360,6 @@ func resourceAwsS3BucketLifecycleUpdate(s3conn *s3.S3, d *schema.ResourceData) e
 	}
 
 	return nil
-}
-
-func flattenAwsS3BucketReplicationConfiguration(r *s3.ReplicationConfiguration) []map[string]interface{} {
-	replication_configuration := make([]map[string]interface{}, 0, 1)
-	m := make(map[string]interface{})
-
-	if r.Role != nil && *r.Role != "" {
-		m["role"] = *r.Role
-	}
-
-	rules := make([]interface{}, 0, len(r.Rules))
-	for _, v := range r.Rules {
-		t := make(map[string]interface{})
-		if v.Destination != nil {
-			rd := make(map[string]interface{})
-			if v.Destination.Bucket != nil {
-				rd["bucket"] = *v.Destination.Bucket
-			}
-			if v.Destination.StorageClass != nil {
-				rd["storage_class"] = *v.Destination.StorageClass
-			}
-			t["destination"] = schema.NewSet(destinationHash, []interface{}{rd})
-		}
-
-		if v.ID != nil {
-			t["id"] = *v.ID
-		}
-		if v.Prefix != nil {
-			t["prefix"] = *v.Prefix
-		}
-		if v.Status != nil {
-			t["status"] = *v.Status
-		}
-		rules = append(rules, t)
-	}
-	m["rules"] = schema.NewSet(rulesHash, rules)
-
-	replication_configuration = append(replication_configuration, m)
-
-	return replication_configuration
 }
 
 func normalizeRoutingRules(w []*s3.RoutingRule) (string, error) {
