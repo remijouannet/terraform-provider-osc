@@ -233,7 +233,7 @@ func (c *Config) ValidateAccountId(accountId string) error {
 var addTerraformVersionToUserAgent = request.NamedHandler{
 	Name: "terraform.TerraformVersionUserAgentHandler",
 	Fn: request.MakeAddToUserAgentHandler(
-		"APN/1.0 HashiCorp/1.0 terraform-provider-osc/v0.7 Terraform", terraform.VersionString()),
+		"APN/1.0 HashiCorp/1.0 terraform-provider-osc/v0.7.1 Terraform", terraform.VersionString()),
 }
 
 var debugAuthFailure = request.NamedHandler{
