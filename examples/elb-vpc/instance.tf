@@ -13,4 +13,5 @@ resource "osc_instance" "euw2-lb-1" {
     Name    = "euw2-lb-1"
     project = "${var.project}"
   }
+  depends_on = ["osc_elb.lb-1"]
 }
