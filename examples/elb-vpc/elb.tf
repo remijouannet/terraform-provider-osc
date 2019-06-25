@@ -19,7 +19,6 @@ resource "osc_elb" "lb-1" {
   security_groups = ["${osc_security_group.euw2-lb-1.id}"]
   subnets         = ["${osc_subnet.euw2-core-1-subnet-2.id}"]
 
-  instances = ["${osc_instance.euw2-lb-1.id}"]
 
   tags {
     Name = "${var.project}"
