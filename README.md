@@ -3,6 +3,10 @@
 Terraform Provider for Outscale (unofficial)
 ==================
 
+**THERE IS NOW AN OFFICIAL OUTSCALE BUILDER**
+https://www.packer.io/docs/builders/outscale.html
+
+
 Requirements
 ------------
 
