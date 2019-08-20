@@ -271,7 +271,7 @@ func amiDescriptionAttributes(d *schema.ResourceData, image *ec2.Image) error {
 	// Simple attributes first
 	d.SetId(*image.ImageId)
 	d.Set("architecture", image.Architecture)
-	d.Set("creation_date", image.CreationDate)
+	d.Set("creation_date", nil)
 	if image.Description != nil {
 		d.Set("description", image.Description)
 	}
@@ -282,18 +282,14 @@ func amiDescriptionAttributes(d *schema.ResourceData, image *ec2.Image) error {
 		d.Set("image_owner_alias", image.ImageOwnerAlias)
 	}
 	d.Set("image_type", image.ImageType)
-	if image.KernelId != nil {
-		d.Set("kernel_id", image.KernelId)
-	}
+	d.Set("kernel_id", nil)
 	d.Set("name", image.Name)
 	d.Set("owner_id", image.OwnerId)
 	if image.Platform != nil {
 		d.Set("platform", image.Platform)
 	}
 	d.Set("public", image.Public)
-	if image.RamdiskId != nil {
-		d.Set("ramdisk_id", image.RamdiskId)
-	}
+	d.Set("ramdisk_id", nil)
 	if image.RootDeviceName != nil {
 		d.Set("root_device_name", image.RootDeviceName)
 	}
@@ -331,7 +327,6 @@ func amiBlockDeviceMappings(m []*ec2.BlockDeviceMapping) *schema.Set {
 		if v.Ebs != nil {
 			ebs := map[string]interface{}{
 				"delete_on_termination": fmt.Sprintf("%t", *v.Ebs.DeleteOnTermination),
-				"encrypted":             fmt.Sprintf("%t", *v.Ebs.Encrypted),
 				"volume_size":           fmt.Sprintf("%d", *v.Ebs.VolumeSize),
 				"volume_type":           *v.Ebs.VolumeType,
 			}
@@ -396,7 +391,6 @@ func amiBlockDeviceMappingHash(v interface{}) int {
 		if len(d.(map[string]interface{})) > 0 {
 			e := d.(map[string]interface{})
 			buf.WriteString(fmt.Sprintf("%s-", e["delete_on_termination"].(string)))
-			buf.WriteString(fmt.Sprintf("%s-", e["encrypted"].(string)))
 			buf.WriteString(fmt.Sprintf("%s-", e["iops"].(string)))
 			buf.WriteString(fmt.Sprintf("%s-", e["volume_size"].(string)))
 			buf.WriteString(fmt.Sprintf("%s-", e["volume_type"].(string)))
