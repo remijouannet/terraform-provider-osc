@@ -7,8 +7,8 @@ Terraform Provider for Outscale (unofficial)
 Requirements
 ------------
 
--   [Terraform](https://www.terraform.io/downloads.html) 0.11.11 
--   [Go](https://golang.org/doc/install) 1.11.5 (to build the provider plugin)
+-   [Terraform](https://www.terraform.io/downloads.html) 0.12.12 
+-   [Go](https://golang.org/doc/install) 1.13.3 (to build the provider plugin)
 
 Install
 ---------------------

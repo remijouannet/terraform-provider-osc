@@ -1,4 +1,4 @@
-FROM golang:1.11.5-alpine
+FROM golang:1.13.3-alpine
 
 MAINTAINER Rémi Jouannet "remijouannet@gmail.com"
 
