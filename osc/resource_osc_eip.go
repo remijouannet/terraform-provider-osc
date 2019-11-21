@@ -10,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
+
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -73,6 +75,7 @@ func resourceAwsEip() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"tags": tagsSchema(),
 		},
 	}
 }
@@ -111,6 +114,13 @@ func resourceAwsEipCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[INFO] EIP ID: %s (domain: %v)", d.Id(), *allocResp.Domain)
+
+	if _, ok := d.GetOk("tags"); ok {
+		if err := setTags(ec2conn, d); err != nil {
+			return errwrap.Wrapf("Error setting tags for EIP: {{err}}", err)
+		}
+	}
+
 	return resourceAwsEipUpdate(d, meta)
 }
 
@@ -182,6 +192,10 @@ func resourceAwsEipRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId(*address.AllocationId)
 	}
 
+	if address.Tags != nil {
+		d.Set("tags", tagsToMap(address.Tags))
+	}
+
 	return nil
 }
 
@@ -237,6 +251,12 @@ func resourceAwsEipUpdate(d *schema.ResourceData, meta interface{}) error {
 			d.Set("instance", "")
 			d.Set("network_interface", "")
 			return fmt.Errorf("Failure associating EIP: %s", err)
+		}
+	}
+
+	if _, ok := d.GetOk("tags"); ok {
+		if err := setTags(ec2conn, d); err != nil {
+			return errwrap.Wrapf("Error updating tags for EIP: {{err}}", err)
 		}
 	}
 
