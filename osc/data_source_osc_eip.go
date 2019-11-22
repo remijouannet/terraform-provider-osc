@@ -25,6 +25,7 @@ func dataSourceAwsEip() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"tags": dataSourceTagsSchema(),
 		},
 	}
 }
@@ -59,6 +60,10 @@ func dataSourceAwsEipRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(*eip.AllocationId)
 	d.Set("id", eip.AllocationId)
 	d.Set("public_ip", eip.PublicIp)
+
+	if err := d.Set("tags", dataSourceTags(eip.Tags)); err != nil {
+		return err
+	}
 
 	return nil
 }

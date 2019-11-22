@@ -77,6 +77,26 @@ func TestAccAWSEIP_basic(t *testing.T) {
 	})
 }
 
+func TestAccAWSEIP_tags(t *testing.T) {
+	var conf ec2.Address
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:      func() { testAccPreCheck(t) },
+		IDRefreshName: "aws_eip.tagged",
+		Providers:     testAccProviders,
+		CheckDestroy:  testAccCheckAWSEIPDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccAWSEIPTags,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEIPExists("aws_eip.tagged", &conf),
+					testAccCheckAWSEIPAttributes(&conf),
+				),
+			},
+		},
+	})
+}
+
 func TestAccAWSEIP_instance(t *testing.T) {
 	var conf ec2.Address
 
@@ -298,6 +318,14 @@ func testAccCheckAWSEIPExists(n string, res *ec2.Address) resource.TestCheckFunc
 
 const testAccAWSEIPConfig = `
 resource "aws_eip" "bar" {
+}
+`
+
+const testAccAWSEIPTags = `
+resource "aws_eip" "tagged" {
+  tags {
+    Name = "eip_test"
+  }
 }
 `
 
